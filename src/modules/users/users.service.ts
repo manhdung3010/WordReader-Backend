@@ -8,7 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
 import { Repository } from 'typeorm';
-import { FilterUserDriverDto } from './dto/filter-user.dto';
+import { FilterUserDto } from './dto/filter-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -29,7 +29,7 @@ export class UsersService {
     }
   }
 
-  async findAll(filter: FilterUserDriverDto): Promise<[Users[], number]> {
+  async findAll(filter: FilterUserDto): Promise<[Users[], number]> {
     const page = filter.page || 1;
     const pageSize = filter.pageSize || 20;
     const skip = (page - 1) * pageSize;
@@ -45,7 +45,7 @@ export class UsersService {
     return [users, totalElements];
   }
 
-  private buildWhereClause(filter: Partial<FilterUserDriverDto>): any {
+  private buildWhereClause(filter: Partial<FilterUserDto>): any {
     const where: any = {};
 
     if (filter.username) {

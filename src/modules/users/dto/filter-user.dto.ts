@@ -2,7 +2,7 @@ import { Gender } from 'src/common/enums/gender.enum';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from 'src/common/enums/role.enum';
 
-export class FilterUserDriverDto {
+export class FilterUserDto {
   @ApiPropertyOptional()
   username?: string;
 

@@ -18,10 +18,10 @@ import { Users } from './entities/users.entity';
 import { HttpMessage } from 'src/common/global/globalEnum';
 import { AuthAdmin } from 'src/common/decorators/http.decorators';
 import { ApiTags } from '@nestjs/swagger';
-import { FilterUserDriverDto } from './dto/filter-user.dto';
+import { FilterUserDto } from './dto/filter-user.dto';
 
-@ApiTags('User')
-@Controller('users')
+@ApiTags('Admin - User')
+@Controller('api/admin/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -55,7 +55,9 @@ export class UsersController {
 
   @AuthAdmin()
   @Get()
-  async findAll(@Query() filter: FilterUserDriverDto): Promise<ResponseData<Users[]>> {
+  async findAll(
+    @Query() filter: FilterUserDto,
+  ): Promise<ResponseData<Users[]>> {
     try {
       const [users, totalElements] = await this.usersService.findAll(filter);
       const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
