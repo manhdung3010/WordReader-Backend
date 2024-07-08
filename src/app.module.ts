@@ -27,15 +27,16 @@ import { ReviewsProduct } from './modules/reviews-product/entities/reviews-produ
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Đặt là true để ConfigModule khả dụng toàn cục
+      isGlobal: true,
     }),
+
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DATABASE_HOST,
       port: +process.env.DATABASE_PORT,
       username: process.env.DATABASE_USER,
-      password:  process.env.DATABASE_PASSWORD,
-      database:  process.env.DATABASE_DBNAME,
+      password: process.env.DATABASE_PASSWORD,
+      database: process.env.DATABASE_DBNAME,
       entities: [
         Users,
         Categories,

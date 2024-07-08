@@ -4,21 +4,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UploadedFileDto } from './dto/uploaded-file.dto';
-import * as fs from 'fs';
-import * as path from 'path';
-import { UPLOADS_DIRECTORY } from './constants/files.enum';
+import { v2 as cloudinaryV2 } from 'cloudinary';
+import * as path from 'path'; // Ensure path is imported
 
 @Injectable()
 export class FilesService {
+  constructor() {
+    cloudinaryV2.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  }
+
   async saveMultipleFiles(files: Array<Express.Multer.File>): Promise<any> {
     const allowedExtensions = ['.png', '.jpg'];
-    const uploadDir = './uploads';
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-      console.log('upload dir success');
-    }
-
     const uploadedFiles: UploadedFileDto[] = [];
 
     for (const file of files) {
@@ -27,10 +27,27 @@ export class FilesService {
         throw new BadRequestException('Invalid file extension');
       }
 
+      const uploadResult = await new Promise<any>((resolve, reject) => {
+        const uploadStream = cloudinaryV2.uploader.upload_stream(
+          {
+            resource_type: 'image',
+            folder: process.env.CLOUDINARY_CLOUD_FOLDER, // Specify the folder
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          },
+        );
+        uploadStream.end(file.buffer); // Use file.buffer to upload the file
+      });
+
       const uploadedFile: UploadedFileDto = {
-        file_name: file.filename,
+        file_name: uploadResult.public_id,
         size: file.size,
-        url: `${process.env.FILE_URL}/${file.filename}`,
+        url: uploadResult.secure_url,
       };
 
       uploadedFiles.push(uploadedFile);
@@ -43,24 +60,21 @@ export class FilesService {
     };
   }
 
-  async getFile(filename: string): Promise<string> {
-    const filePath = path.resolve(__dirname, UPLOADS_DIRECTORY, filename);
-
-    if (!fs.existsSync(filePath)) {
-      throw new NotFoundException(`File ${filename} not found`);
+  async getFile(publicId: string): Promise<string> {
+    try {
+      const resource = await cloudinaryV2.api.resource(publicId);
+      return resource.secure_url;
+    } catch (error) {
+      throw new NotFoundException(`File ${publicId} not found`);
     }
-    return filePath;
   }
 
-  async deleteFile(filename: string): Promise<string> {
-    const filePath = path.resolve(__dirname, UPLOADS_DIRECTORY, filename);
-
-    if (!fs.existsSync(filePath)) {
-      throw new NotFoundException(`File ${filename} not found`);
+  async deleteFile(publicId: string): Promise<string> {
+    try {
+      await cloudinaryV2.uploader.destroy(publicId);
+      return `${publicId} has been successfully removed`;
+    } catch (error) {
+      throw new NotFoundException(`File ${publicId} not found`);
     }
-
-    fs.unlinkSync(filePath);
-
-    return `${filename} has been successfully removed`;
   }
 }

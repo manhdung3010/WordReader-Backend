@@ -6,7 +6,6 @@ import {
   Get,
   Param,
   Res,
-  BadRequestException,
   Delete,
 } from '@nestjs/common';
 import { FilesService } from './files.service';
@@ -19,13 +18,10 @@ import {
 } from '@nestjs/swagger';
 import { FilesUploadedDto } from './dto/files-uploaded.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
 import { Response } from 'express'; // Ensure Response type is imported
 
-import { FilesMessage } from './constants/files-message.enum';
 import { AuthAdmin } from 'src/common/decorators/http.decorators';
+import * as multer from 'multer'; // Import multer
 
 @ApiTags('Api Uploads')
 @Controller('files')
@@ -41,13 +37,7 @@ export class FilesController {
   })
   @UseInterceptors(
     FilesInterceptor('files', 10, {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const randomName = crypto.randomBytes(4).toString('hex');
-          cb(null, `${randomName}-${file.originalname}`);
-        },
-      }),
+      storage: multer.memoryStorage(), // Use memory storage
     }),
   )
   async uploadMultipleFiles(
@@ -59,15 +49,9 @@ export class FilesController {
   @Get('uploads/:filename')
   @ApiOperation({ summary: 'View a file' })
   async getFile(@Param('filename') filename: string, @Res() res: Response) {
-    const filePath = await this.filesService.getFile(filename);
-    if (!fs.existsSync(filePath)) {
-      throw new BadRequestException(FilesMessage.NOT_FOUND);
-    }
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
+    const fileUrl = await this.filesService.getFile(filename);
+    res.redirect(fileUrl); // Redirect to the Cloudinary URL
   }
-
 
   @AuthAdmin()
   @Delete('uploads/:filename')
