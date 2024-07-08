@@ -1,20 +1,24 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { AuthMessage } from 'src/common/constants/auth-message.enum';
 import { RegisterDto } from './dto/register.dto';
 import { Users } from '../users/entities/users.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    @InjectRepository(Users)
+    private readonly userRepository: Repository<Users>,
   ) {}
 
   async logIn(
@@ -22,12 +26,15 @@ export class AuthService {
     password: string,
   ): Promise<{ access_token: string; user: any }> {
     const user = await this.usersService.findOneByUsernameOrEmail(identifier);
+
     if (!user) {
-      throw new UnauthorizedException(AuthMessage.NOT_FOUND);
+      throw new BadRequestException(AuthMessage.NOT_FOUND);
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException(AuthMessage.INVALID_PASSWORD);
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+      throw new BadRequestException(AuthMessage.INVALID_PASSWORD);
     }
 
     const payload = {
@@ -37,6 +44,7 @@ export class AuthService {
       role: user.role,
     };
     const access_token = await this.jwtService.signAsync(payload);
+
     return { access_token, user };
   }
 
@@ -48,10 +56,13 @@ export class AuthService {
       throw new ConflictException('Username already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(authPayload.password, 10);
+    const hashPassword = await bcrypt.hash(authPayload.password, 12);
+    console.log(hashPassword);
+    
+
     const newUser = new Users();
     newUser.username = authPayload.username;
-    newUser.password = hashedPassword;
+    newUser.password = hashPassword;
     newUser.email = authPayload.email;
     newUser.fullName = authPayload.fullName;
     newUser.phoneNumber = authPayload.phoneNumber;
@@ -59,6 +70,6 @@ export class AuthService {
     newUser.address = authPayload.address;
     newUser.gender = authPayload.gender;
 
-    return await this.usersService.create(newUser);
+    return await this.userRepository.save(newUser);
   }
 }
