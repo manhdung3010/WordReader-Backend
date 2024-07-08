@@ -16,6 +16,7 @@ export class FilesService {
 
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir);
+      console.log('upload dir success');
     }
 
     const uploadedFiles: UploadedFileDto[] = [];
@@ -53,13 +54,13 @@ export class FilesService {
 
   async deleteFile(filename: string): Promise<string> {
     const filePath = path.resolve(__dirname, UPLOADS_DIRECTORY, filename);
-  
+
     if (!fs.existsSync(filePath)) {
       throw new NotFoundException(`File ${filename} not found`);
     }
-  
+
     fs.unlinkSync(filePath);
-  
+
     return `${filename} has been successfully removed`;
   }
 }

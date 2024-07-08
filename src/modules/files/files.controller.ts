@@ -56,7 +56,6 @@ export class FilesController {
     return this.filesService.saveMultipleFiles(files);
   }
 
-  @AuthAdmin()
   @Get('uploads/:filename')
   @ApiOperation({ summary: 'View a file' })
   async getFile(@Param('filename') filename: string, @Res() res: Response) {
@@ -64,9 +63,11 @@ export class FilesController {
     if (!fs.existsSync(filePath)) {
       throw new BadRequestException(FilesMessage.NOT_FOUND);
     }
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
   }
+
 
   @AuthAdmin()
   @Delete('uploads/:filename')
