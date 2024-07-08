@@ -18,8 +18,10 @@ import { ResponseData } from 'src/common/global/globalClass';
 import { CategoryPost } from './entities/category-post.entity';
 import { HttpMessage } from 'src/common/global/globalEnum';
 import { FilterCategoryPostsDto } from './dto/filter-category-posts.dto';
+import { ApiTags } from '@nestjs/swagger';
 
-@Controller('category-posts')
+@ApiTags('Admin - Category Post')
+@Controller('api/admin/category-posts')
 export class CategoryPostsController {
   constructor(private readonly categoryPostsService: CategoryPostsService) {}
 
@@ -138,10 +140,68 @@ export class CategoryPostsController {
       );
     }
   }
-  
+
   @AuthAdmin()
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.categoryPostsService.remove(+id);
+  }
+}
+
+@ApiTags('Public - Category Post')
+@Controller('api/public/category-post')
+export class CategoryPostPublicController {
+  constructor(private readonly categoryPostsService: CategoryPostsService) {}
+
+  @Get()
+  async findAll(
+    @Query() filter: FilterCategoryPostsDto,
+  ): Promise<ResponseData<CategoryPost[]>> {
+    try {
+      const [categories, totalElements] =
+        await this.categoryPostsService.findAll(filter);
+      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
+      const size = categories.length;
+
+      return new ResponseData<CategoryPost[]>(
+        categories,
+        HttpStatus.OK,
+        'Successfully retrieved categories.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      return new ResponseData<CategoryPost[]>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve categories.',
+      );
+    }
+  }
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<ResponseData<CategoryPost>> {
+    try {
+      const category: CategoryPost =
+        await this.categoryPostsService.findOne(+id);
+      return new ResponseData<CategoryPost>(
+        category,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        return new ResponseData<CategoryPost>(
+          null,
+          HttpStatus.CONFLICT,
+          error.message,
+        );
+      }
+      return new ResponseData<CategoryPost>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        HttpMessage.ERROR,
+      );
+    }
   }
 }

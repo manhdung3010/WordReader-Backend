@@ -14,17 +14,28 @@ import { KeywordsModule } from './modules/keywords/keywords.module';
 import { Keyword } from './modules/keywords/entities/keyword.entity';
 import { CategoryPostsModule } from './modules/category-posts/category-posts.module';
 import { CategoryPost } from './modules/category-posts/entities/category-post.entity';
-import { ProductWareHouse } from './modules/products/entities/product-warehouse.entity';
+import { productWarehouse } from './modules/products/entities/product-warehouse.entity';
+import { PostsModule } from './modules/posts/posts.module';
+import { KeywordPostModule } from './modules/keyword-post/keyword-post.module';
+import { KeywordPost } from './modules/keyword-post/entities/keyword-post.entity';
+import { Posts } from './modules/posts/entities/post.entity';
+import { FilesModule } from './modules/files/files.module';
+import { ConfigModule } from '@nestjs/config';
+import { ReviewsProductModule } from './modules/reviews-product/reviews-product.module';
+import { ReviewsProduct } from './modules/reviews-product/entities/reviews-product.entity';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Đặt là true để ConfigModule khả dụng toàn cục
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: '123456',
-      database: 'world_reader',
+      host: process.env.DATABASE_HOST,
+      port: +process.env.DATABASE_PORT,
+      username: process.env.DATABASE_USER,
+      password:  process.env.DATABASE_PASSWORD,
+      database:  process.env.DATABASE_DBNAME,
       entities: [
         Users,
         Categories,
@@ -33,7 +44,10 @@ import { ProductWareHouse } from './modules/products/entities/product-warehouse.
         Author,
         Keyword,
         CategoryPost,
-        ProductWareHouse,
+        productWarehouse,
+        KeywordPost,
+        Posts,
+        ReviewsProduct,
       ],
       synchronize: true,
     }),
@@ -44,6 +58,10 @@ import { ProductWareHouse } from './modules/products/entities/product-warehouse.
     AuthorsModule,
     KeywordsModule,
     CategoryPostsModule,
+    PostsModule,
+    KeywordPostModule,
+    FilesModule,
+    ReviewsProductModule,
   ],
 })
 export class AppModule {}

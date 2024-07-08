@@ -1,8 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Product } from './product.entity';
 
 @Entity()
-export class ProductWareHouse {
+export class productWarehouse {
   @PrimaryGeneratedColumn()
   id: number;
 

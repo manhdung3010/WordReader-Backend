@@ -14,14 +14,14 @@ import { ApiTags } from '@nestjs/swagger';
 import { RegisterDto } from './dto/register.dto';
 
 @ApiTags('Authenticate')
-@Controller('auth')
+@Controller('api/auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() authPayload: AuthPayloadDto) {
-    const { access_token, user } = await this.authService.signIn(
+    const { access_token, user } = await this.authService.logIn(
       authPayload.identifier,
       authPayload.password,
     );

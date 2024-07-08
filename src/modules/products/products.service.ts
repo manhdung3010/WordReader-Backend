@@ -20,7 +20,10 @@ import { InfoProduct } from './entities/info-product.entity';
 import { FilterProductDto } from './dto/filter-product.dto';
 import { CreateProductFlashSaleDto } from './dto/create-product-flash-sale.dto';
 import { Keyword } from '../keywords/entities/keyword.entity';
-import { ProductWareHouse } from './entities/product-warehouse.entity';
+import { productWarehouse } from './entities/product-warehouse.entity';
+import { UpdateProductWarehouse } from './dto/update-product-warehouse.dto';
+import { FilterPaginationDto } from './dto/filter-pagination';
+import { ReviewsProduct } from '../reviews-product/entities/reviews-product.entity';
 
 @Injectable()
 export class ProductsService {
@@ -37,8 +40,11 @@ export class ProductsService {
     @InjectRepository(Keyword)
     private readonly keywordRepository: Repository<Keyword>,
 
-    @InjectRepository(ProductWareHouse)
-    private readonly productWarehouseRepository: Repository<ProductWareHouse>,
+    @InjectRepository(productWarehouse)
+    private readonly productWarehouseRepository: Repository<productWarehouse>,
+
+    @InjectRepository(ReviewsProduct)
+    private readonly reviewsProductRepository: Repository<ReviewsProduct>,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
@@ -129,7 +135,7 @@ export class ProductsService {
     // Save the new product entity to the database
     await this.productRepository.save(newProduct);
 
-    // Create ProductWarehouse instance and associate with newProduct
+    // Create productWarehouse instance and associate with newProduct
     if (productWarehouse) {
       const { quantityInStock, quantityInUse } = productWarehouse;
       const displayQuantity = quantityInStock - quantityInUse;
@@ -201,6 +207,58 @@ export class ProductsService {
     }
   }
 
+  async updateProductWarehouse(
+    id: number,
+    updateProductWarehouseDto: UpdateProductWarehouse,
+  ): Promise<Product> {
+    try {
+      const { productWarehouse } = updateProductWarehouseDto;
+
+      const product = await this.productRepository.findOne({
+        where: { id },
+        relations: ['productWarehouse'],
+      });
+
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${id} not found`);
+      }
+
+      if (productWarehouse) {
+        const { quantityInStock, quantityInUse } = productWarehouse;
+
+        // Update existing product warehouse or create a new one if not present
+        if (product.productWarehouse) {
+          product.productWarehouse.quantityInStock = quantityInStock;
+          product.productWarehouse.quantityInUse = quantityInUse;
+          product.productWarehouse.displayQuantity =
+            quantityInStock - quantityInUse;
+
+          await this.productWarehouseRepository.save(product.productWarehouse);
+        } else {
+          const newProductWarehouse = this.productWarehouseRepository.create({
+            product: product,
+            quantityInStock,
+            quantityInUse,
+            displayQuantity: quantityInStock - quantityInUse,
+          });
+
+          await this.productWarehouseRepository.save(newProductWarehouse);
+
+          product.productWarehouse = newProductWarehouse;
+        }
+
+        await this.productRepository.save(product);
+      }
+
+      // Return the updated product
+      return product;
+    } catch (error) {
+      throw new Error(
+        `Failed to update product with ID ${id}: ${error.message}`,
+      );
+    }
+  }
+
   async deleteFlashSale(id: number): Promise<Product> {
     try {
       const updateObject = {
@@ -224,15 +282,21 @@ export class ProductsService {
     const whereClause = this.buildWhereClause(filter);
 
     const options: FindManyOptions<Product> = {
-      relations: ['categories', 'information', 'keywords', 'productWareHouse'],
+      relations: ['categories', 'information', 'keywords', 'productWarehouse'],
       where: whereClause,
       skip: skip,
       take: pageSize,
     };
-    
+
     try {
       const [products, totalElements] =
         await this.productRepository.findAndCount(options);
+
+      for (const product of products) {
+        const avgRating = await this.calculateAverageRating(product.id);
+        product.averageStarRating = avgRating;
+      }
+
       return [products, totalElements];
     } catch (error) {
       // Handle error appropriately
@@ -281,6 +345,18 @@ export class ProductsService {
     return where;
   }
 
+  private async calculateAverageRating(productId: number): Promise<number> {
+    const avgRating = await this.reviewsProductRepository
+      .createQueryBuilder('rp')
+      .select('AVG(rp.star)', 'averageStarRating')
+      .where('rp.product.id = :productId', { productId })
+      .getRawOne();
+
+    // Lấy giá trị trung bình đánh giá và làm tròn đến 2 chữ số thập phân
+    const roundedAvgRating = avgRating.averageStarRating || 0;
+    return Math.round(roundedAvgRating * 100) / 100;
+  }
+
   async findAllFlashSale(): Promise<Product[]> {
     const currentTime = new Date();
     const products = await this.productRepository
@@ -298,10 +374,64 @@ export class ProductsService {
     return products;
   }
 
+  async findByKeyword(
+    keywordCode: string,
+    filter: FilterPaginationDto,
+  ): Promise<[Product[], number]> {
+    const page = filter.page || 1;
+    const pageSize = filter.pageSize || 20;
+    const skip = (page - 1) * pageSize;
+
+    const keyword = await this.keywordRepository.findOne({
+      where: { code: keywordCode },
+    });
+
+    if (!keyword) {
+      throw new NotFoundException(`Keyword with code ${keywordCode} not found`);
+    }
+
+    const [products, totalElements] = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.keywords', 'keyword')
+      .where('keyword.id = :keywordId', { keywordId: keyword.id })
+      .skip(skip)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return [products, totalElements];
+  }
+
+  async findByCategory(
+    categoryUrl: string,
+    filter: FilterPaginationDto,
+  ): Promise<[Product[], number]> {
+    const page = filter.page || 1;
+    const pageSize = filter.pageSize || 20;
+    const skip = (page - 1) * pageSize;
+
+    const category = await this.categoriesRepository.findOne({
+      where: { url: categoryUrl },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with URL ${categoryUrl} not found`);
+    }
+
+    const [products, totalElements] = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.categories', 'categories')
+      .where('categories.id = :categoryId', { categoryId: category.id })
+      .skip(skip)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return [products, totalElements];
+  }
+
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['categories', 'information', 'keywords', 'productWareHouse'],
+      relations: ['categories', 'information', 'keywords', 'productWarehouse'],
     });
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
@@ -316,24 +446,74 @@ export class ProductsService {
     const {
       categories: categoryIds,
       keywords: keywordIds,
+      productWarehouse,
+      information,
       ...updateData
     } = updateProductDto;
 
     const product = await this.findOne(id);
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
 
+    // If categoryIds are provided, fetch corresponding categories and associate them
     if (categoryIds && categoryIds.length > 0) {
       const categories = await this.categoriesRepository.findByIds(categoryIds);
       product.categories = categories;
     }
 
+    // If keywordIds are provided, fetch corresponding keywords and associate them
     if (keywordIds && keywordIds.length > 0) {
       const keywords = await this.keywordRepository.findByIds(keywordIds);
       product.keywords = keywords;
     }
 
+    // Update product fields
     Object.assign(product, updateData);
 
     await this.productRepository.save(product);
+
+    // Update productWarehouse
+    if (productWarehouse) {
+      const existingWarehouse = await this.productWarehouseRepository.findOne({
+        where: { product: { id: product.id } },
+      });
+
+      if (existingWarehouse) {
+        const { quantityInStock, quantityInUse } = productWarehouse;
+        existingWarehouse.quantityInStock = quantityInStock;
+        existingWarehouse.quantityInUse = quantityInUse;
+        existingWarehouse.displayQuantity = quantityInStock - quantityInUse;
+        await this.productWarehouseRepository.save(existingWarehouse);
+      } else {
+        const { quantityInStock, quantityInUse } = productWarehouse;
+        const displayQuantity = quantityInStock - quantityInUse;
+
+        const newProductWarehouse = this.productWarehouseRepository.create({
+          product,
+          quantityInStock,
+          quantityInUse,
+          displayQuantity,
+        });
+
+        await this.productWarehouseRepository.save(newProductWarehouse);
+      }
+    }
+
+    // Update information
+    if (information && information.length > 0) {
+      await this.infoProductRepository.delete({ product: { id: product.id } });
+
+      for (const infoProductDto of information) {
+        const { name: infoName, content } = infoProductDto;
+        const infoProduct = this.infoProductRepository.create({
+          name: infoName,
+          content,
+          product,
+        });
+        await this.infoProductRepository.save(infoProduct);
+      }
+    }
 
     return this.findOne(id);
   }

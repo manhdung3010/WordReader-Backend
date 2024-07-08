@@ -9,7 +9,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Categories } from '../categories/entities/category.entity';
 import { InfoProduct } from './entities/info-product.entity';
 import { Keyword } from '../keywords/entities/keyword.entity';
-import { ProductWareHouse } from './entities/product-warehouse.entity';
+import { productWarehouse } from './entities/product-warehouse.entity';
+import { ReviewsProduct } from '../reviews-product/entities/reviews-product.entity';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { ProductWareHouse } from './entities/product-warehouse.entity';
       Categories,
       InfoProduct,
       Keyword,
-      ProductWareHouse,
+      productWarehouse,
+      ReviewsProduct,
     ]),
   ],
   controllers: [ProductsController, ProductsPublicController],

@@ -41,7 +41,6 @@ export class CreateCategoryPostDto {
     example: {
       title: 'string',
       description: 'string',
-      keywords: 'string',
     },
     required: false,
   })

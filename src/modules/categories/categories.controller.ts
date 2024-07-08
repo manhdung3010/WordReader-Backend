@@ -146,3 +146,63 @@ export class CategoriesController {
     return this.categoriesService.remove(+id);
   }
 }
+
+
+@ApiTags('Public - Category Product')
+@Controller('api/public/category-product')
+export class CategoryProductPublicController {
+  constructor(private readonly categoriesService: CategoriesService) {}
+
+  @Get()
+  async findAll(
+    @Query() filter: FilterCategoryDto,
+  ): Promise<ResponseData<Categories[]>> {
+    try {
+      const [categories, totalElements] =
+        await this.categoriesService.findAll(filter);
+      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
+      const size = categories.length;
+
+      return new ResponseData<Categories[]>(
+        categories,
+        HttpStatus.OK,
+        'Successfully retrieved categories.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      return new ResponseData<Categories[]>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve categories.',
+      );
+    }
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<ResponseData<Categories>> {
+    try {
+      const category: Categories = await this.categoriesService.findOne(+id);
+      return new ResponseData<Categories>(
+        category,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        return new ResponseData<Categories>(
+          null,
+          HttpStatus.CONFLICT,
+          error.message,
+        );
+      }
+      return new ResponseData<Categories>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        HttpMessage.ERROR,
+      );
+    }
+  }
+
+}

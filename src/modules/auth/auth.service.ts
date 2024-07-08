@@ -17,7 +17,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signIn(
+  async logIn(
     identifier: string,
     password: string,
   ): Promise<{ access_token: string; user: any }> {
@@ -30,7 +30,12 @@ export class AuthService {
       throw new UnauthorizedException(AuthMessage.INVALID_PASSWORD);
     }
 
-    const payload = { sub: user.id, username: user.username, role: user.role };
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+    };
     const access_token = await this.jwtService.signAsync(payload);
     return { access_token, user };
   }

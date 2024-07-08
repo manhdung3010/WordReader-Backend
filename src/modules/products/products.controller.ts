@@ -10,6 +10,7 @@ import {
   ConflictException,
   NotFoundException,
   Query,
+  Patch,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -21,6 +22,8 @@ import { HttpMessage } from 'src/common/global/globalEnum';
 import { Product } from './entities/product.entity';
 import { FilterProductDto } from './dto/filter-product.dto';
 import { CreateProductFlashSaleDto } from './dto/create-product-flash-sale.dto';
+import { UpdateProductWarehouse } from './dto/update-product-warehouse.dto';
+import { FilterPaginationDto } from './dto/filter-pagination';
 
 @ApiTags('Admin - Product')
 @Controller('api/admin/products')
@@ -142,6 +145,30 @@ export class ProductsController {
   }
 
   @AuthAdmin()
+  @Patch('/update-product-warehouse/:id')
+  async updateProductWarehouse(
+    @Param('id') id: string,
+    @Body() updateProductWarehouse: UpdateProductWarehouse,
+  ): Promise<ResponseData<Product>> {
+    try {
+      const updatedProduct = await this.productsService.updateProductWarehouse(
+        +id,
+        updateProductWarehouse,
+      );
+      return new ResponseData(
+        updatedProduct,
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
+      }
+      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+    }
+  }
+
+  @AuthAdmin()
   @Delete('/delete-flash-sale/:id')
   async deleteFlashSale(
     @Param('id') id: string,
@@ -197,6 +224,66 @@ export class ProductsPublicController {
         HttpStatus.INTERNAL_SERVER_ERROR,
         'Failed to retrieve products.',
       );
+    }
+  }
+
+  @Get('/findByKeyword/:keywordCode')
+  async findByKeyword(
+    @Param('keywordCode') keywordCode: string,
+    @Query() filter: FilterPaginationDto,
+  ): Promise<ResponseData<Product[]>> {
+    try {
+      const [products, totalElements] = await this.productsService.findByKeyword(
+        keywordCode,
+        filter,
+      );
+      const pageSize = filter.pageSize || 20;
+      const totalPages = Math.ceil(totalElements / pageSize);
+      const size = products.length;
+  
+      return new ResponseData<Product[]>(
+        products,
+        HttpStatus.OK,
+        'Successfully retrieved products.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return new ResponseData(null, HttpStatus.NOT_FOUND, 'Products not found.');
+      }
+      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+    }
+  }
+  
+  @Get('/findByCategory/:urlCategory')
+  async findByCategory(
+    @Param('urlCategory') urlCategory: string,
+    @Query() filter: FilterPaginationDto,
+  ): Promise<ResponseData<Product[]>> {
+    try {
+      const [products, totalElements] = await this.productsService.findByCategory(
+        urlCategory,
+        filter,
+      );
+      const pageSize = filter.pageSize || 20;
+      const totalPages = Math.ceil(totalElements / pageSize);
+      const size = products.length;
+  
+      return new ResponseData<Product[]>(
+        products,
+        HttpStatus.OK,
+        'Successfully retrieved products.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return new ResponseData(null, HttpStatus.NOT_FOUND, 'Products not found.');
+      }
+      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
 

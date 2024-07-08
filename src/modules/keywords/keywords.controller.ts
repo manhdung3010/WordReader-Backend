@@ -20,8 +20,8 @@ import { FilterKeywordDto } from './dto/filter-keyword.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthAdmin } from 'src/common/decorators/http.decorators';
 
-@ApiTags('Admin - Keyword')
-@Controller('keywords')
+@ApiTags('Admin - Keyword Product')
+@Controller('api/admin/keyword-product')
 export class KeywordsController {
   constructor(private readonly keywordsService: KeywordsService) {}
 
@@ -130,5 +130,56 @@ export class KeywordsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.keywordsService.remove(+id);
+  }
+}
+
+@ApiTags('Public - Keyword Product')
+@Controller('api/public/keyword-product')
+export class KeywordsPublicController {
+  constructor(private readonly keywordsService: KeywordsService) {}
+
+  @Get()
+  async findAll(
+    @Query() filter: FilterKeywordDto,
+  ): Promise<ResponseData<Keyword[]>> {
+    try {
+      const [keywords, totalElements] =
+        await this.keywordsService.findAll(filter);
+      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
+      const size = keywords.length;
+
+      return new ResponseData<Keyword[]>(
+        keywords,
+        HttpStatus.OK,
+        'Successfully retrieved keywords.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      return new ResponseData<Keyword[]>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve keywords.',
+      );
+    }
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<ResponseData<Keyword>> {
+    try {
+      const keyword = await this.keywordsService.findOne(+id);
+      return new ResponseData<Keyword>(
+        keyword,
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData<Keyword>(
+        null,
+        HttpStatus.NOT_FOUND,
+        'Keyword not found.',
+      );
+    }
   }
 }

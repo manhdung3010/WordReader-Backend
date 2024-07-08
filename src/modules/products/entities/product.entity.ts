@@ -11,7 +11,8 @@ import { InfoProduct } from './info-product.entity';
 import { Categories } from 'src/modules/categories/entities/category.entity';
 import { StatusProduct } from 'src/common/enums/status-product.enum';
 import { Keyword } from 'src/modules/keywords/entities/keyword.entity';
-import { ProductWareHouse } from './product-warehouse.entity';
+import { productWarehouse } from './product-warehouse.entity';
+import { ReviewsProduct } from 'src/modules/reviews-product/entities/reviews-product.entity';
 
 @Entity()
 export class Product {
@@ -42,6 +43,9 @@ export class Product {
   @Column()
   avatar: string;
 
+  @Column({ default: 0 })
+  averageStarRating: number; 
+
   @Column()
   price: number;
 
@@ -54,14 +58,17 @@ export class Product {
   @Column({ type: 'json', nullable: true })
   image: string[];
 
+  @OneToMany(() => ReviewsProduct, reviews => reviews.product)
+  reviews: ReviewsProduct[]; 
+
   @OneToMany(() => InfoProduct, (info) => info.product)
   information: InfoProduct[];
 
   @OneToOne(
-    () => ProductWareHouse,
-    (productWareHouse) => productWareHouse.product,
+    () => productWarehouse,
+    (productWarehouse) => productWarehouse.product,
   )
-  productWareHouse: ProductWareHouse;
+  productWarehouse: productWarehouse;
 
   @ManyToMany(() => Categories)
   @JoinTable({
