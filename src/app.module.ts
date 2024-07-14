@@ -23,6 +23,8 @@ import { FilesModule } from './modules/files/files.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewsProductModule } from './modules/reviews-product/reviews-product.module';
 import { ReviewsProduct } from './modules/reviews-product/entities/reviews-product.entity';
+import { MenusModule } from './modules/menus/menus.module';
+import { Menu } from './modules/menus/entities/menu.entity';
 
 @Module({
   imports: [
@@ -49,6 +51,7 @@ import { ReviewsProduct } from './modules/reviews-product/entities/reviews-produ
         KeywordPost,
         Posts,
         ReviewsProduct,
+        Menu,
       ],
       synchronize: true,
     }),
@@ -63,6 +66,7 @@ import { ReviewsProduct } from './modules/reviews-product/entities/reviews-produ
     KeywordPostModule,
     FilesModule,
     ReviewsProductModule,
+    MenusModule,
   ],
 })
 export class AppModule {}

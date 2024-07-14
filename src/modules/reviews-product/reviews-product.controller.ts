@@ -18,7 +18,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AuthAdmin } from 'src/common/decorators/http.decorators';
 
 @ApiTags('Admin - Review Product')
-@Controller('reviews-product')
+@Controller('admin/reviews-product')
 export class ReviewsProductController {
   constructor(private readonly reviewsProductService: ReviewsProductService) {}
 
@@ -26,14 +26,8 @@ export class ReviewsProductController {
   @Post()
   async create(@Body() createReviewsProductDto: CreateReviewsProductDto) {
     try {
-      const updatedProduct = await this.reviewsProductService.create(
-        createReviewsProductDto,
-      );
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const createdReview = await this.reviewsProductService.create(createReviewsProductDto);
+      return new ResponseData(createdReview, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
       if (error instanceof ConflictException) {
         return new ResponseData(null, HttpStatus.CONFLICT, error.message);
@@ -46,73 +40,41 @@ export class ReviewsProductController {
   @Get()
   async findAll() {
     try {
-      const updatedProduct = await this.reviewsProductService.findAll();
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const reviews = await this.reviewsProductService.findAll();
+      return new ResponseData(reviews, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
 
   @AuthAdmin()
   @Get('/findByProductId/:idProduct')
-  findByProductId(@Param('idProduct') idProduct: string) {
+  async findByProductId(@Param('idProduct') idProduct: string) {
     try {
-      const updatedProduct =
-        this.reviewsProductService.findByProductId(+idProduct);
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const reviews = await this.reviewsProductService.findByProductId(+idProduct);
+      return new ResponseData(reviews, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
 
   @AuthAdmin()
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     try {
-      const updatedProduct = this.reviewsProductService.findOne(+id);
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const review = await this.reviewsProductService.findOne(+id);
+      return new ResponseData(review, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
 
   @AuthAdmin()
   @Put(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateReviewsProductDto: UpdateReviewsProductDto,
-  ) {
+  async update(@Param('id') id: string, @Body() updateReviewsProductDto: UpdateReviewsProductDto) {
     try {
-      const updatedProduct = this.reviewsProductService.update(
-        +id,
-        updateReviewsProductDto,
-      );
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const updatedReview = await this.reviewsProductService.update(+id, updateReviewsProductDto);
+      return new ResponseData(updatedReview, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
       if (error instanceof ConflictException) {
         return new ResponseData(null, HttpStatus.CONFLICT, error.message);
@@ -123,8 +85,13 @@ export class ReviewsProductController {
 
   @AuthAdmin()
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reviewsProductService.remove(+id);
+  async remove(@Param('id') id: string) {
+    try {
+      await this.reviewsProductService.remove(+id);
+      return new ResponseData(null, HttpStatus.OK, HttpMessage.SUCCESS);
+    } catch (error) {
+      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+    }
   }
 }
 
@@ -136,51 +103,29 @@ export class PublicReviewsProductController {
   @Get()
   async findAll() {
     try {
-      const updatedProduct = await this.reviewsProductService.findAll();
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const reviews = await this.reviewsProductService.findAll();
+      return new ResponseData(reviews, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
 
   @Get('/findByProductId/:idProduct')
-  findByProductId(@Param('idProduct') idProduct: string) {
+  async findByProductId(@Param('idProduct') idProduct: string) {
     try {
-      const updatedProduct =
-        this.reviewsProductService.findByProductId(+idProduct);
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const reviews = await this.reviewsProductService.findByProductId(+idProduct);
+      return new ResponseData(reviews, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     try {
-      const updatedProduct = this.reviewsProductService.findOne(+id);
-      return new ResponseData(
-        updatedProduct,
-        HttpStatus.OK,
-        HttpMessage.SUCCESS,
-      );
+      const review = await this.reviewsProductService.findOne(+id);
+      return new ResponseData(review, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
