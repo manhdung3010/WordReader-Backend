@@ -23,7 +23,7 @@ import { FilterMenuDto } from './dto/filter-menu.dto';
 @ApiTags('Admin - Menu')
 @Controller('api/admin/menu')
 export class MenusController {
-  constructor(private readonly categoryPostsService: MenusService) {}
+  constructor(private readonly menuService: MenusService) {}
 
   @AuthAdmin()
   @Post()
@@ -31,7 +31,7 @@ export class MenusController {
     @Body() createCategoryPostDto: CreateMenuDto,
   ): Promise<ResponseData<Menu>> {
     try {
-      const newMenu: Menu = await this.categoryPostsService.create(
+      const newMenu: Menu = await this.menuService.create(
         createCategoryPostDto,
       );
       return new ResponseData<Menu>(
@@ -56,7 +56,7 @@ export class MenusController {
   async findAll(@Query() filter: FilterMenuDto): Promise<ResponseData<Menu[]>> {
     try {
       const [menus, totalElements] =
-        await this.categoryPostsService.findAll(filter);
+        await this.menuService.findAll(filter);
       const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
       const size = menus.length;
 
@@ -80,7 +80,7 @@ export class MenusController {
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<ResponseData<Menu>> {
     try {
-      const menu: Menu = await this.categoryPostsService.findOne(+id);
+      const menu: Menu = await this.menuService.findOne(+id);
       return new ResponseData<Menu>(
         menu,
         HttpStatus.CREATED,
@@ -105,7 +105,7 @@ export class MenusController {
     @Body() updateMenuDto: UpdateMenuDto,
   ): Promise<ResponseData<Menu>> {
     try {
-      const menu: Menu = await this.categoryPostsService.update(
+      const menu: Menu = await this.menuService.update(
         +id,
         updateMenuDto,
       );
@@ -129,20 +129,20 @@ export class MenusController {
   @AuthAdmin()
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.categoryPostsService.remove(+id);
+    return this.menuService.remove(+id);
   }
 }
 
-@ApiTags('Public - Menu Post')
-@Controller('api/public/menu-post')
+@ApiTags('Public - Menu')
+@Controller('api/public/menu')
 export class MenuPublicController {
-  constructor(private readonly categoryPostsService: MenusService) {}
+  constructor(private readonly menuService: MenusService) {}
 
   @Get()
   async findAll(@Query() filter: FilterMenuDto): Promise<ResponseData<Menu[]>> {
     try {
       const [menus, totalElements] =
-        await this.categoryPostsService.findAll(filter);
+        await this.menuService.findAll(filter);
       const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
       const size = menus.length;
 
@@ -165,7 +165,7 @@ export class MenuPublicController {
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<ResponseData<Menu>> {
     try {
-      const menu: Menu = await this.categoryPostsService.findOne(+id);
+      const menu: Menu = await this.menuService.findOne(+id);
       return new ResponseData<Menu>(
         menu,
         HttpStatus.CREATED,
