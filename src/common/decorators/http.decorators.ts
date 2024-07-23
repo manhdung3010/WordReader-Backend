@@ -10,6 +10,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { AdminGuard } from '../guards/admin.guard';
 import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { UserGuard } from '../guards/user.guard';
 
 export function AuthAdmin(
   ...permission: Role[]
@@ -17,6 +18,18 @@ export function AuthAdmin(
   return applyDecorators(
     Permission(...permission),
     UseGuards(JwtAuthGuard, AdminGuard),
+    ApiBearerAuth(),
+    UseInterceptors(AuthUserInterceptor),
+    ApiUnauthorizedResponse({ description: 'Unauthorized' }),
+  );
+}
+
+export function AuthUser(
+  ...permission: Role[]
+): MethodDecorator & ClassDecorator {
+  return applyDecorators(
+    Permission(...permission),
+    UseGuards(JwtAuthGuard, UserGuard),
     ApiBearerAuth(),
     UseInterceptors(AuthUserInterceptor),
     ApiUnauthorizedResponse({ description: 'Unauthorized' }),

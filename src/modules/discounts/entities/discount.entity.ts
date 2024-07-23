@@ -1,5 +1,6 @@
 import { DiscountType } from 'src/common/enums/discount.enum';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Categories } from 'src/modules/categories/entities/category.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
 
 @Entity()
 export class Discount {
@@ -35,6 +36,17 @@ export class Discount {
 
   @Column()
   minPurchase?: number;
+
+  @Column()
+  isFullDiscount: boolean;
+
+  @ManyToMany(() => Categories)
+  @JoinTable({
+    name: 'discount_categories',
+    joinColumn: { name: 'discount_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'category_id', referencedColumnName: 'id' },
+  })
+  categoryDiscount: Categories[];
 
   @Column()
   startTime: Date;

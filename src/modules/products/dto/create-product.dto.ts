@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional } from 'class-validator';
-import { StatusProduct } from 'src/common/enums/status-product.enum';
+import { StatusProduct } from 'src/common/enums/product-status.enum';
 
 export class CreateProductDto {
   @ApiProperty({
@@ -47,7 +47,7 @@ export class CreateProductDto {
   @ApiProperty({
     example: 0,
   })
-  discount: number;
+  perDiscount: number;
 
   @ApiProperty({
     example: [],

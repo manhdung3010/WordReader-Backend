@@ -27,6 +27,9 @@ import { MenusModule } from './modules/menus/menus.module';
 import { Menu } from './modules/menus/entities/menu.entity';
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { Discount } from './modules/discounts/entities/discount.entity';
+import { OrdersModule } from './modules/orders/orders.module';
+import { Order } from './modules/orders/entities/order.entity';
+import { OrderItem } from './modules/orders/entities/orderItem.entity';
 
 @Module({
   imports: [
@@ -54,7 +57,9 @@ import { Discount } from './modules/discounts/entities/discount.entity';
         Posts,
         ReviewsProduct,
         Menu,
-        Discount
+        Discount,
+        Order,
+        OrderItem,
       ],
       synchronize: true,
     }),
@@ -71,6 +76,7 @@ import { Discount } from './modules/discounts/entities/discount.entity';
     ReviewsProductModule,
     MenusModule,
     DiscountsModule,
+    OrdersModule,
   ],
 })
 export class AppModule {}

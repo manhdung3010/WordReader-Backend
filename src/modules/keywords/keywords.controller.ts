@@ -49,7 +49,7 @@ export class KeywordsController {
       return new ResponseData<Keyword>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }

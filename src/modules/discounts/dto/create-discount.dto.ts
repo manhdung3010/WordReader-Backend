@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsBoolean, IsNumber, IsString, IsDate } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  IsString,
+  IsDate,
+} from 'class-validator';
 import { DiscountType } from 'src/common/enums/discount.enum';
 
 export class CreateDiscountDto {
@@ -40,8 +48,6 @@ export class CreateDiscountDto {
   @IsEnum(DiscountType)
   discountType: DiscountType;
 
-
-
   @ApiProperty({
     example: 0,
     description: 'The price of the discount',
@@ -75,6 +81,21 @@ export class CreateDiscountDto {
   @IsOptional()
   @IsNumber()
   minPurchase?: number;
+
+  @ApiProperty({
+    example: true,
+  })
+  @IsNotEmpty()
+  @IsBoolean()
+  isFullDiscount: boolean;
+
+  @ApiProperty({
+    example: [],
+    isArray: true,
+    required: false,
+  })
+  categoryDiscount?: number[];
+
 
   @ApiProperty({
     example: '2024-12-31T23:59:59Z',

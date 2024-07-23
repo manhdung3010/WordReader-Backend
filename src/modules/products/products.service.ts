@@ -1,15 +1,11 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import {
   FindManyOptions,
+  In,
   LessThanOrEqual,
   MoreThan,
   MoreThanOrEqual,
@@ -57,7 +53,7 @@ export class ProductsService {
       status,
       avatar,
       price,
-      discount,
+      perDiscount,
       image,
       information,
       categories: categoryIds,
@@ -71,8 +67,9 @@ export class ProductsService {
     const existingProductByName = await this.productRepository.findOne({
       where: { name },
     });
+
     if (existingProductByName) {
-      throw new ConflictException(`Product with name ${name} already exists`);
+      throw new Error(`Product with name ${name} already exists`);
     }
 
     // Check if product with the same URL exists
@@ -80,17 +77,17 @@ export class ProductsService {
       where: { url },
     });
     if (existingProductByUrl) {
-      throw new ConflictException(`Product with URL ${url} already exists`);
+      throw new Error(`Product with URL ${url} already exists`);
     }
 
-    if (discount < 0 || discount > 100) {
-      throw new BadRequestException('Discount must be between 0 and 100');
+    if (perDiscount < 0 || perDiscount > 100) {
+      throw new Error('Discount must be between 0 and 100');
     }
 
     let discountPrice = 0;
 
-    if (discount && discount > 0) {
-      discountPrice = price - (price * discount) / 100;
+    if (perDiscount && perDiscount > 0) {
+      discountPrice = (price * perDiscount) / 100;
     }
 
     let flashSalePrice = price;
@@ -109,7 +106,7 @@ export class ProductsService {
       avatar,
       price,
       discountPrice,
-      discount,
+      perDiscount,
       image,
       flashSale: flashSale
         ? {
@@ -120,7 +117,6 @@ export class ProductsService {
       seo,
     });
 
-    // If categoryIds are provided, fetch corresponding categories and associate them
     if (categoryIds && categoryIds.length > 0) {
       const categories = await this.categoriesRepository.findByIds(categoryIds);
       newProduct.categories = categories;
@@ -301,6 +297,23 @@ export class ProductsService {
     } catch (error) {
       // Handle error appropriately
       throw new Error(`Failed to fetch products: ${error.message}`);
+    }
+  }
+
+  async findByIds(ids: number[]): Promise<Product[]> {
+    try {
+      const products = await this.productRepository.find({
+        where: { id: In(ids) },
+        relations: [
+          'categories',
+          'information',
+          'keywords',
+          'productWarehouse',
+        ],
+      });
+      return products;
+    } catch (error) {
+      throw new Error(`Failed to fetch products by IDs: ${error.message}`);
     }
   }
 

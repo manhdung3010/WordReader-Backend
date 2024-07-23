@@ -46,7 +46,7 @@ export class MenusController {
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -55,8 +55,7 @@ export class MenusController {
   @Get()
   async findAll(@Query() filter: FilterMenuDto): Promise<ResponseData<Menu[]>> {
     try {
-      const [menus, totalElements] =
-        await this.menuService.findAll(filter);
+      const [menus, totalElements] = await this.menuService.findAll(filter);
       const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
       const size = menus.length;
 
@@ -93,7 +92,7 @@ export class MenusController {
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -105,10 +104,7 @@ export class MenusController {
     @Body() updateMenuDto: UpdateMenuDto,
   ): Promise<ResponseData<Menu>> {
     try {
-      const menu: Menu = await this.menuService.update(
-        +id,
-        updateMenuDto,
-      );
+      const menu: Menu = await this.menuService.update(+id, updateMenuDto);
       return new ResponseData<Menu>(
         menu,
         HttpStatus.CREATED,
@@ -121,7 +117,7 @@ export class MenusController {
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -141,8 +137,7 @@ export class MenuPublicController {
   @Get()
   async findAll(@Query() filter: FilterMenuDto): Promise<ResponseData<Menu[]>> {
     try {
-      const [menus, totalElements] =
-        await this.menuService.findAll(filter);
+      const [menus, totalElements] = await this.menuService.findAll(filter);
       const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
       const size = menus.length;
 
@@ -178,7 +173,7 @@ export class MenuPublicController {
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }

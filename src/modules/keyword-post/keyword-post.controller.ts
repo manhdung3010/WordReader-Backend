@@ -49,7 +49,7 @@ export class KeywordPostController {
       return new ResponseData<KeywordPost>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }

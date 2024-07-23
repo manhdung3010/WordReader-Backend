@@ -1,0 +1,209 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Req,
+  HttpStatus,
+  ConflictException,
+  NotFoundException,
+  Put,
+  Query,
+} from '@nestjs/common';
+import { OrdersService } from './orders.service';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { AuthAdmin, AuthUser } from 'src/common/decorators/http.decorators';
+import { ResponseData } from 'src/common/global/globalClass';
+import { Order } from './entities/order.entity';
+import { HttpMessage } from 'src/common/global/globalEnum';
+import { ApiTags } from '@nestjs/swagger';
+import { FilterOrderByUserDto, FilterOrderDto } from './dto/filter-order.dto';
+
+@ApiTags('Admin - Orders')
+@Controller('api/admin/orders')
+export class OrdersController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @AuthAdmin()
+  @Get()
+  async findAll(
+    @Query() filter: FilterOrderDto,
+  ): Promise<ResponseData<Order[]>> {
+    try {
+      const [orders, totalElements] = await this.ordersService.findAll(filter);
+      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
+      const size = orders.length;
+
+      return new ResponseData<Order[]>(
+        orders,
+        HttpStatus.OK,
+        'Successfully retrieved orders.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      return new ResponseData<Order[]>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve orders.',
+      );
+    }
+  }
+
+  @AuthAdmin()
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<ResponseData<Order>> {
+    try {
+      const order = await this.ordersService.findOne(+id);
+      if (!order) {
+        return new ResponseData<Order>(
+          null,
+          HttpStatus.NOT_FOUND,
+          'Order not found.',
+        );
+      }
+      return new ResponseData<Order>(
+        order,
+        HttpStatus.OK,
+        'Order retrieved successfully.',
+      );
+    } catch (error) {
+      return new ResponseData<Order>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve order.',
+      );
+    }
+  }
+
+  @AuthAdmin()
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateOrderDto: UpdateOrderDto,
+  ): Promise<ResponseData<Order>> {
+    try {
+      const updatedOrder = await this.ordersService.update(+id, updateOrderDto);
+      if (!updatedOrder) {
+        return new ResponseData<Order>(
+          null,
+          HttpStatus.NOT_FOUND,
+          'Order not found for update.',
+        );
+      }
+      return new ResponseData<Order>(
+        updatedOrder,
+        HttpStatus.OK,
+        'Order updated successfully.',
+      );
+    } catch (error) {
+      return new ResponseData<Order>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        'Failed to update order.',
+      );
+    }
+  }
+
+  @AuthAdmin()
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<ResponseData<void>> {
+    try {
+      await this.ordersService.remove(+id);
+      return new ResponseData<void>(
+        null,
+        HttpStatus.NO_CONTENT,
+        'Order deleted successfully.',
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return new ResponseData<void>(
+          null,
+          HttpStatus.NOT_FOUND,
+          `Order #${id} not found.`,
+        );
+      }
+      return new ResponseData<void>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        'Failed to delete order.',
+      );
+    }
+  }
+}
+
+@ApiTags('Public - Orders')
+@Controller('orders')
+export class OrdersPublicController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @AuthUser()
+  @Post()
+  async create(
+    @Body() createOrderDto: CreateOrderDto,
+    @Req() req: any,
+  ): Promise<ResponseData<Order>> {
+    try {
+      const user = req.user;
+      const newOrder: Order = await this.ordersService.create(
+        createOrderDto,
+        user,
+      );
+      return new ResponseData<Order>(
+        newOrder,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        return new ResponseData<Order>(
+          null,
+          HttpStatus.CONFLICT,
+          error.message,
+        );
+      }
+      return new ResponseData<Order>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        error.message,
+      );
+    }
+  }
+
+  @AuthUser()
+  @Get('byUser')
+  async findOne(
+    @Query() filter: FilterOrderByUserDto,
+    @Req() req: any,
+  ): Promise<ResponseData<Order[]>> {
+    try {
+      const user = req.user;
+
+      const [orders, totalElements] = await await this.ordersService.findByUser(
+        user,
+        filter,
+      );
+      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
+      const size = orders.length;
+
+      return new ResponseData<Order[]>(
+        orders,
+        HttpStatus.OK,
+        'Successfully retrieved orders.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      return new ResponseData<Order[]>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve orders.',
+      );
+    }
+  }
+}

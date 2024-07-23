@@ -50,7 +50,7 @@ export class CategoryPostsController {
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -104,7 +104,7 @@ export class CategoryPostsController {
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -136,7 +136,7 @@ export class CategoryPostsController {
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -200,7 +200,7 @@ export class CategoryPostPublicController {
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }

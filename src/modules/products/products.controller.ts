@@ -7,7 +7,6 @@ import {
   Delete,
   Put,
   HttpStatus,
-  ConflictException,
   NotFoundException,
   Query,
   Patch,
@@ -43,10 +42,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -70,11 +66,7 @@ export class ProductsController {
         size,
       );
     } catch (error) {
-      return new ResponseData<Product[]>(
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to retrieve categories.',
-      );
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -113,10 +105,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -137,10 +126,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -161,10 +147,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -181,10 +164,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -219,11 +199,7 @@ export class ProductsPublicController {
         size,
       );
     } catch (error) {
-      return new ResponseData<Product[]>(
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to retrieve products.',
-      );
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -233,14 +209,12 @@ export class ProductsPublicController {
     @Query() filter: FilterPaginationDto,
   ): Promise<ResponseData<Product[]>> {
     try {
-      const [products, totalElements] = await this.productsService.findByKeyword(
-        keywordCode,
-        filter,
-      );
+      const [products, totalElements] =
+        await this.productsService.findByKeyword(keywordCode, filter);
       const pageSize = filter.pageSize || 20;
       const totalPages = Math.ceil(totalElements / pageSize);
       const size = products.length;
-  
+
       return new ResponseData<Product[]>(
         products,
         HttpStatus.OK,
@@ -250,27 +224,22 @@ export class ProductsPublicController {
         size,
       );
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData(null, HttpStatus.NOT_FOUND, 'Products not found.');
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
-  
+
   @Get('/findByCategory/:urlCategory')
   async findByCategory(
     @Param('urlCategory') urlCategory: string,
     @Query() filter: FilterPaginationDto,
   ): Promise<ResponseData<Product[]>> {
     try {
-      const [products, totalElements] = await this.productsService.findByCategory(
-        urlCategory,
-        filter,
-      );
+      const [products, totalElements] =
+        await this.productsService.findByCategory(urlCategory, filter);
       const pageSize = filter.pageSize || 20;
       const totalPages = Math.ceil(totalElements / pageSize);
       const size = products.length;
-  
+
       return new ResponseData<Product[]>(
         products,
         HttpStatus.OK,
@@ -280,10 +249,7 @@ export class ProductsPublicController {
         size,
       );
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData(null, HttpStatus.NOT_FOUND, 'Products not found.');
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -298,12 +264,7 @@ export class ProductsPublicController {
         'Successfully retrieved products.',
       );
     } catch (error) {
-      console.error('Failed to retrieve products:', error);
-      return new ResponseData<Product[]>(
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to retrieve products.',
-      );
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 
@@ -313,14 +274,7 @@ export class ProductsPublicController {
       const product = await this.productsService.findOne(+id);
       return new ResponseData(product, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData(
-          null,
-          HttpStatus.NOT_FOUND,
-          'Product not found.',
-        );
-      }
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
 }

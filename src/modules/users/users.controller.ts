@@ -48,7 +48,7 @@ export class UsersController {
       return new ResponseData<Users>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -97,7 +97,7 @@ export class UsersController {
       return new ResponseData<Users>(
         null,
         HttpStatus.INTERNAL_SERVER_ERROR,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }

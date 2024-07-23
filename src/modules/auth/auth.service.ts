@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -11,6 +12,7 @@ import { Users } from '../users/entities/users.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -56,9 +58,14 @@ export class AuthService {
       throw new ConflictException('Username already exists');
     }
 
+    const existingUserEmail = await this.usersService.findOneByEmail(
+      authPayload.email,
+    );
+    if (existingUserEmail) {
+      throw new ConflictException('Email already exists');
+    }
+
     const hashPassword = await bcrypt.hash(authPayload.password, 12);
-    console.log(hashPassword);
-    
 
     const newUser = new Users();
     newUser.username = authPayload.username;
@@ -71,5 +78,32 @@ export class AuthService {
     newUser.gender = authPayload.gender;
 
     return await this.userRepository.save(newUser);
+  }
+
+  async forgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+    user: any,
+  ): Promise<Users> {
+    const existingUser = (await this.usersService.findOneDetail(
+      user.userId,
+    )) as Users;
+
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      forgotPasswordDto.oldPassword,
+      existingUser.password,
+    );
+    if (!isPasswordValid) {
+      throw new ConflictException('Old password is incorrect');
+    }
+
+    const hashedPassword = await bcrypt.hash(forgotPasswordDto.newPassword, 12);
+    existingUser.password = hashedPassword;
+    await this.usersService.update(existingUser.id, existingUser);
+
+    return existingUser;
   }
 }

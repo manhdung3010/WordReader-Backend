@@ -49,7 +49,7 @@ export class AuthorsController {
       return new ResponseData<Author>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }

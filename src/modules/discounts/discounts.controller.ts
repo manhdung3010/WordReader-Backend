@@ -7,7 +7,6 @@ import {
   Delete,
   Put,
   HttpStatus,
-  ConflictException,
   Query,
 } from '@nestjs/common';
 import { DiscountsService } from './discounts.service';
@@ -19,9 +18,10 @@ import { HttpMessage } from 'src/common/global/globalEnum';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthAdmin } from 'src/common/decorators/http.decorators';
 import { FilterDiscountDto } from './dto/filter-discount.dto';
+import { CheckDiscountDto } from './dto/check-discount.dto';
 
-@ApiTags('Admin - Discount Product')
-@Controller('api/admin/discount-product')
+@ApiTags('Admin - Discount')
+@Controller('api/admin/discount')
 export class DiscountsController {
   constructor(private readonly discountsService: DiscountsService) {}
 
@@ -38,17 +38,10 @@ export class DiscountsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Discount>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<Discount>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -145,52 +138,42 @@ export class DiscountsController {
   }
 }
 
-@ApiTags('Public - Discount Product')
-@Controller('api/public/discount-product')
+@ApiTags('Public - Discount')
+@Controller('api/public/discount')
 export class DiscountsPublicController {
   constructor(private readonly discountsService: DiscountsService) {}
 
-  @Get()
-  async findAll(
-    @Query() filter: FilterDiscountDto,
-  ): Promise<ResponseData<Discount[]>> {
+  @Get(':code')
+  async findOne(@Param('code') code: string): Promise<ResponseData<Discount>> {
     try {
-      const [discounts, totalElements] =
-        await this.discountsService.findAll(filter);
-      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
-      const size = discounts.length;
-
-      return new ResponseData<Discount[]>(
-        discounts,
-        HttpStatus.OK,
-        'Successfully retrieved discounts.',
-        totalElements,
-        totalPages,
-        size,
-      );
-    } catch (error) {
-      return new ResponseData<Discount[]>(
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to retrieve discounts.',
-      );
-    }
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ResponseData<Discount>> {
-    try {
-      const discount = await this.discountsService.findOne(+id);
-      return new ResponseData<Discount>(
+      const discount = await this.discountsService.findByCode(code);
+      return new ResponseData<any>(
         discount,
         HttpStatus.OK,
         HttpMessage.SUCCESS,
       );
     } catch (error) {
+      return new ResponseData<any>(null, HttpStatus.NOT_FOUND, error.message);
+    }
+  }
+
+  @Post('price-reduce')
+  async create(
+    @Body() checkDiscountDto: CheckDiscountDto,
+  ): Promise<ResponseData<Discount>> {
+    try {
+      const newDiscount =
+        await this.discountsService.checkDiscount(checkDiscountDto);
+      return new ResponseData<Discount>(
+        newDiscount,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
       return new ResponseData<Discount>(
         null,
-        HttpStatus.NOT_FOUND,
-        'Discount not found.',
+        HttpStatus.BAD_REQUEST,
+        error.message,
       );
     }
   }

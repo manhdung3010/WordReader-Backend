@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
 import { Repository } from 'typeorm';
 import { FilterUserDto } from './dto/filter-user.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class UsersService {
@@ -42,7 +43,9 @@ export class UsersService {
       take: pageSize,
     });
 
-    return [users, totalElements];
+    const plainUsers = instanceToPlain(users) as Users[];
+
+    return [plainUsers, totalElements];
   }
 
   private buildWhereClause(filter: Partial<FilterUserDto>): any {
@@ -67,10 +70,28 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<Users | string> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['orders'],
+    });
     if (!user) {
       return `User with ID ${id} not found`;
     }
+
+    const plainUsers = instanceToPlain(user) as Users;
+
+    return plainUsers;
+  }
+
+  async findOneDetail(id: number): Promise<Users | string> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['orders'],
+    });
+    if (!user) {
+      return `User with ID ${id} not found`;
+    }
+
     return user;
   }
 

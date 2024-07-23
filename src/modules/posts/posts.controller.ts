@@ -57,7 +57,7 @@ export class PostsController {
       return new ResponseData<Posts>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }

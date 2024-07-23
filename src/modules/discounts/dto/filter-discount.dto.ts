@@ -7,6 +7,9 @@ import {
   IsNumber,
   IsDate,
   IsString,
+  IsArray,
+  ArrayUnique,
+  ArrayNotEmpty,
 } from 'class-validator';
 
 export class FilterDiscountDto {
@@ -64,6 +67,18 @@ export class FilterDiscountDto {
   @IsOptional()
   @IsDate()
   endTime?: Date;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  isFullDiscount?: boolean;
+
+  @ApiPropertyOptional({ type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayNotEmpty()
+  categoryDiscount?: number[];
 
   @ApiPropertyOptional()
   @IsOptional()

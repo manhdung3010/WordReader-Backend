@@ -49,7 +49,7 @@ export class CategoriesController {
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -103,7 +103,7 @@ export class CategoriesController {
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -135,7 +135,7 @@ export class CategoriesController {
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
@@ -146,7 +146,6 @@ export class CategoriesController {
     return this.categoriesService.remove(+id);
   }
 }
-
 
 @ApiTags('Public - Category Product')
 @Controller('api/public/category-product')
@@ -200,9 +199,8 @@ export class CategoryProductPublicController {
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,
-        HttpMessage.ERROR,
+        error.message,
       );
     }
   }
-
 }

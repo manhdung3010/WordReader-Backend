@@ -9,10 +9,10 @@ import {
 } from 'typeorm';
 import { InfoProduct } from './info-product.entity';
 import { Categories } from 'src/modules/categories/entities/category.entity';
-import { StatusProduct } from 'src/common/enums/status-product.enum';
 import { Keyword } from 'src/modules/keywords/entities/keyword.entity';
 import { productWarehouse } from './product-warehouse.entity';
 import { ReviewsProduct } from 'src/modules/reviews-product/entities/reviews-product.entity';
+import { StatusProduct } from 'src/common/enums/product-status.enum';
 
 @Entity()
 export class Product {
@@ -44,7 +44,7 @@ export class Product {
   avatar: string;
 
   @Column({ default: 0 })
-  averageStarRating: number; 
+  averageStarRating: number;
 
   @Column()
   price: number;
@@ -53,13 +53,13 @@ export class Product {
   discountPrice: number;
 
   @Column()
-  discount: number;
+  perDiscount: number;
 
   @Column({ type: 'json', nullable: true })
   image: string[];
 
-  @OneToMany(() => ReviewsProduct, reviews => reviews.product)
-  reviews: ReviewsProduct[]; 
+  @OneToMany(() => ReviewsProduct, (reviews) => reviews.product)
+  reviews: ReviewsProduct[];
 
   @OneToMany(() => InfoProduct, (info) => info.product)
   information: InfoProduct[];

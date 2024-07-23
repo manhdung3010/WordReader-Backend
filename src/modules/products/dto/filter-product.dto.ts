@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { StatusProduct } from 'src/common/enums/status-product.enum';
+import { StatusProduct } from 'src/common/enums/product-status.enum';
 
 export class FilterProductDto {
   @ApiPropertyOptional()
