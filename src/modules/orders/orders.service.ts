@@ -1,11 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindManyOptions, Repository } from 'typeorm';
+import { Between, FindManyOptions, In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { Order } from './entities/order.entity';
 import { Users } from '../users/entities/users.entity';
 import { FilterOrderByUserDto, FilterOrderDto } from './dto/filter-order.dto';
+import { DiscountsService } from '../discounts/discounts.service';
+import { Product } from '../products/entities/product.entity';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { OrderPayStatus } from 'src/common/enums/order-pay-status.enum';
+import { instanceToPlain } from 'class-transformer';
+import { productWarehouse } from '../products/entities/product-warehouse.entity';
+import { Discount } from '../discounts/entities/discount.entity';
+import { StatusProduct } from 'src/common/enums/product-status.enum';
+import {
+  ChangePayStatusOrderDto,
+  ChangeStatusOrderDto,
+} from './dto/status-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -15,17 +31,121 @@ export class OrdersService {
 
     @InjectRepository(Users)
     private readonly usersRepository: Repository<Users>,
+
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+
+    @InjectRepository(productWarehouse)
+    private readonly productWarehouseRepository: Repository<productWarehouse>,
+
+    @InjectRepository(Discount)
+    private readonly discountRepository: Repository<Discount>,
+
+    private readonly discountsService: DiscountsService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto, user: any): Promise<Order> {
     const userOrder = await this.usersRepository.findOneBy({ id: user.userId });
+
     if (!userOrder) {
       throw new NotFoundException(`User with ID ${user.userId} not found`);
     }
+
+    const productIds =
+      createOrderDto.orderItems?.map((product) => product.productId) || [];
+
+    const productData = await this.productRepository.find({
+      where: { id: In(productIds) },
+    });
+
+    for (const itemDto of createOrderDto.orderItems) {
+      const product = productData.find((p) => p.id === itemDto.productId);
+      if (!product) {
+        throw new NotFoundException(
+          `Product with ID ${itemDto.productId} not found`,
+        );
+      }
+      if (product.status === StatusProduct.OUT_OF_STOCK) {
+        throw new BadRequestException(
+          `Product with ID ${itemDto.productId} is out of stock`,
+        );
+      }
+    }
+
+    const totalPrice = productData.reduce((sum, product) => {
+      const productDto = createOrderDto.orderItems.find(
+        (dto) => dto.productId === product.id,
+      );
+      return (
+        sum +
+        (product.price - product.discountPrice) * (productDto?.quantity || 0)
+      );
+    }, 0);
+
+    const orderItemsWithDetails = createOrderDto.orderItems.map((itemDto) => {
+      const product = productData.find((p) => p.id === itemDto.productId);
+      if (!product) {
+        throw new NotFoundException(
+          `Product with ID ${itemDto.productId} not found`,
+        );
+      }
+      return { ...itemDto, product };
+    });
+
+    let discountAmount = 0;
+    if (createOrderDto.discountCode) {
+      const checkDiscountDto = {
+        code: createOrderDto.discountCode,
+        products: createOrderDto.orderItems,
+      };
+
+      try {
+        const discountResult =
+          await this.discountsService.checkDiscount(checkDiscountDto);
+        discountAmount = discountResult.priceReduce;
+
+        // Update usage limit if applicable
+        discountResult.discount.usageLimit -= 1;
+        await this.discountRepository.save(discountResult.discount);
+      } catch (error) {
+        throw new BadRequestException(
+          `Invalid discount code: ${error.message}`,
+        );
+      }
+    }
+
     const newOrder = this.orderRepository.create({
       ...createOrderDto,
       user: userOrder,
+      discountPrice: discountAmount,
+      totalPrice: totalPrice,
+      status: OrderStatus.PENDING,
+      payStatus: OrderPayStatus.PENDING,
+      orderItems: orderItemsWithDetails,
     });
+
+    for (const item of createOrderDto.orderItems) {
+      const productWarehouse = await this.productWarehouseRepository.findOne({
+        where: { product: { id: item.productId } },
+      });
+
+      if (!productWarehouse) {
+        throw new NotFoundException(
+          `Product warehouse for product ID ${item.productId} not found`,
+        );
+      }
+
+      if (productWarehouse.displayQuantity < item.quantity) {
+        throw new BadRequestException(
+          `Not enough stock for product ID ${item.productId}`,
+        );
+      }
+
+      productWarehouse.displayQuantity -= item.quantity;
+      productWarehouse.quantityInUse += item.quantity;
+      await this.productWarehouseRepository.save(productWarehouse);
+    }
+
     return this.orderRepository.save(newOrder);
   }
 
@@ -35,7 +155,7 @@ export class OrdersService {
     const skip = (page - 1) * pageSize;
 
     const options: FindManyOptions<Order> = {
-      relations: ['orderItems', 'user'],
+      relations: ['user'],
       skip: skip,
       take: pageSize,
       where: this.buildWhereClause(filter),
@@ -44,7 +164,10 @@ export class OrdersService {
     try {
       const [orders, totalElements] =
         await this.orderRepository.findAndCount(options);
-      return [orders, totalElements];
+
+      const plainOrders = orders.map((order) => instanceToPlain(order));
+
+      return [plainOrders as Order[], totalElements];
     } catch (error) {
       throw new Error(`Failed to fetch orders: ${error.message}`);
     }
@@ -85,12 +208,14 @@ export class OrdersService {
   async findOne(id: number): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['orderItems', 'user'],
+      relations: ['user'],
     });
+
     if (!order) {
       throw new NotFoundException(`Order #${id} not found`);
     }
-    return order;
+
+    return instanceToPlain(order) as Order;
   }
 
   async findByUser(
@@ -100,30 +225,33 @@ export class OrdersService {
     const page = filter.page || 1;
     const pageSize = filter.pageSize || 20;
     const skip = (page - 1) * pageSize;
-  
+
     const whereClause: any = {
       user: { id: user.userId },
     };
-  
+
     if (filter.status) {
       whereClause.status = filter.status;
     }
-  
+
     if (filter.payStatus) {
       whereClause.payStatus = filter.payStatus;
     }
-  
+
     const options: FindManyOptions<Order> = {
-      relations: ['orderItems', 'user'],
+      relations: ['user'],
       skip: skip,
       take: pageSize,
       where: whereClause,
     };
-  
+
     try {
       const [orders, totalElements] =
         await this.orderRepository.findAndCount(options);
-      return [orders, totalElements];
+
+      const plainOrders = orders.map((order) => instanceToPlain(order));
+
+      return [plainOrders as Order[], totalElements];
     } catch (error) {
       throw new Error(`Failed to fetch orders: ${error.message}`);
     }
@@ -142,7 +270,6 @@ export class OrdersService {
 
   async remove(id: number): Promise<void> {
     const order = await this.findOne(id);
-    console.log(order);
 
     if (order) {
       const result = await this.orderRepository.delete(id);
@@ -152,5 +279,79 @@ export class OrdersService {
     } else {
       throw new NotFoundException(`Order #${id} not found`);
     }
+  }
+
+  async changeStatusOrder(
+    orderId: number,
+    changeStatusOrderDto: ChangeStatusOrderDto,
+  ): Promise<void> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    if (!Object.values(OrderStatus).includes(changeStatusOrderDto.status)) {
+      throw new BadRequestException(
+        `Invalid order status: ${changeStatusOrderDto.status}`,
+      );
+    }
+
+    // Save the order status change
+    order.status = changeStatusOrderDto.status;
+    await this.orderRepository.save(order);
+
+    // Update product warehouse quantities based on order status
+    for (const item of order.orderItems) {
+      const productWarehouse = await this.productWarehouseRepository.findOne({
+        where: { product: { id: item.product.id } },
+      });
+
+      if (!productWarehouse) {
+        throw new NotFoundException(
+          `Product warehouse for product ID ${item.product.id} not found`,
+        );
+      }
+
+      if (changeStatusOrderDto.status === OrderStatus.DONE) {
+        // Update quantities when status is DONE
+        productWarehouse.quantityInStock -= item.quantity;
+        productWarehouse.quantityInUse -= item.quantity;
+      } else if (changeStatusOrderDto.status === OrderStatus.CANCELLED) {
+        // Update quantities when status is CANCELLED
+        productWarehouse.quantityInUse -= item.quantity;
+        productWarehouse.displayQuantity += item.quantity;
+      }
+
+      await this.productWarehouseRepository.save(productWarehouse);
+    }
+  }
+  async changePayStatusOrder(
+    orderId: number,
+    changePayStatusOrderDto: ChangePayStatusOrderDto,
+  ): Promise<void> {
+    // Find the order by ID
+    const order = await this.orderRepository.findOneBy({ id: orderId });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Validate new status if needed (e.g., ensure it is a valid status)
+    if (
+      !Object.values(OrderPayStatus).includes(changePayStatusOrderDto.payStatus)
+    ) {
+      throw new BadRequestException(
+        `Invalid order payStatus: ${changePayStatusOrderDto.payStatus}`,
+      );
+    }
+
+    // Update the order status
+    order.payStatus = changePayStatusOrderDto.payStatus;
+
+    // Save the updated order
+    await this.orderRepository.save(order);
   }
 }

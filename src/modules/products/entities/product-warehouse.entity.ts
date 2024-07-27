@@ -12,7 +12,7 @@ export class productWarehouse {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Product)
+  @OneToOne(() => Product, { onDelete: 'CASCADE' })
   @JoinColumn()
   product: Product;
 

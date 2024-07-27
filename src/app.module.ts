@@ -29,7 +29,6 @@ import { DiscountsModule } from './modules/discounts/discounts.module';
 import { Discount } from './modules/discounts/entities/discount.entity';
 import { OrdersModule } from './modules/orders/orders.module';
 import { Order } from './modules/orders/entities/order.entity';
-import { OrderItem } from './modules/orders/entities/orderItem.entity';
 
 @Module({
   imports: [
@@ -59,7 +58,6 @@ import { OrderItem } from './modules/orders/entities/orderItem.entity';
         Menu,
         Discount,
         Order,
-        OrderItem,
       ],
       synchronize: true,
     }),

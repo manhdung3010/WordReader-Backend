@@ -3,14 +3,20 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
-import { OrderItem } from './orderItem.entity';
 import { Users } from 'src/modules/users/entities/users.entity';
 import { OrderPayStatus } from 'src/common/enums/order-pay-status.enum';
+import { AddressType } from 'src/common/enums/address.enum';
+import { Product } from 'src/modules/products/entities/product.entity';
+
+interface OrderItem {
+  quantity: number;
+  product: Product
+}
+
 
 @Entity()
 export class Order {
@@ -20,7 +26,7 @@ export class Order {
   @ManyToOne(() => Users, (user) => user.orders)
   user: Users;
 
-  @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true, onDelete: 'CASCADE' })
+  @Column({ type: 'json' })
   orderItems: OrderItem[];
 
   @Column({ type: 'enum', enum: OrderStatus })
@@ -46,4 +52,13 @@ export class Order {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  @Column({ type: 'json', nullable: true })
+  shipping?: {
+    name: string;
+    phone: string;
+    address: string;
+    streetName: string;
+    addressType: AddressType;
+  };
 }

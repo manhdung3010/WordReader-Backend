@@ -254,37 +254,42 @@ export class DiscountsService {
 
   async checkDiscount(checkDiscountDto: CheckDiscountDto): Promise<any> {
     const { code, products: productsDto } = checkDiscountDto;
-  
-    // Find the discount based on the code
+
     const discount = await this.discountRepository.findOne({
       where: { code },
       relations: ['categoryDiscount'],
     });
-  
-    // Check if the discount exists
+
     if (!discount) {
       throw new NotFoundException(`Discount with code "${code}" not found`);
     }
-  
+
     const currentDateTime = new Date();
-  
-    // Check if the discount is currently active
-    if (currentDateTime < discount.startTime || currentDateTime > discount.endTime) {
-      throw new NotFoundException(`Discount with code "${code}" is not currently active`);
+
+    if (
+      currentDateTime < discount.startTime ||
+      currentDateTime > discount.endTime
+    ) {
+      throw new NotFoundException(
+        `Discount with code "${code}" is not currently active`,
+      );
     }
-  
-    // Check if the discount usage limit is reached
+
     if (discount.usageLimit <= 0) {
-      throw new NotFoundException(`Discount with code "${code}" has reached its usage limit`);
+      throw new NotFoundException(
+        `Discount with code "${code}" has reached its usage limit`,
+      );
     }
-  
-    const categoryIds = discount.categoryDiscount.map((category) => category.id);
-  
-    const productIds = productsDto?.map((productDto) => productDto.productId) || [];
+
+    const categoryIds = discount.categoryDiscount.map(
+      (category) => category.id,
+    );
+
+    const productIds =
+      productsDto?.map((productDto) => productDto.productId) || [];
     let priceReduce: number = 0;
     let productData: Product[] = [];
-  
-    // Retrieve product data based on whether it's a full discount or specific categories
+
     if (discount.isFullDiscount) {
       productData = await this.productRepository.findByIds(productIds);
     } else {
@@ -298,17 +303,17 @@ export class DiscountsService {
         relations: ['categories'],
       });
     }
-  
-    // Calculate the total price of the products after individual discounts
+
     const totalPrice = productData.reduce((sum, product) => {
-      const productDto = productsDto.find((dto) => dto.productId === product.id);
+      const productDto = productsDto.find(
+        (dto) => dto.productId === product.id,
+      );
       return (
         sum +
         (product.price - product.discountPrice) * (productDto?.quantity || 0)
       );
     }, 0);
-  
-    // Calculate the discount reduction if total price meets the minimum purchase requirement
+
     if (totalPrice >= discount.minPurchase) {
       if (discount.discountType === DiscountType.Percentage) {
         const discountAmount = totalPrice * (discount.price / 100);
@@ -319,8 +324,8 @@ export class DiscountsService {
       }
     }
 
-  
     return {
+      discount: discount,
       priceReduce: priceReduce,
     };
   }

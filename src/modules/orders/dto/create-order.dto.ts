@@ -2,15 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsNumber,
-  IsEnum,
   IsOptional,
   IsString,
-  IsDecimal,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { OrderStatus } from 'src/common/enums/order-status.enum';
-import { OrderPayStatus } from 'src/common/enums/order-pay-status.enum';
+import { AddressType } from 'src/common/enums/address.enum';
 
 class OrderItemDto {
   @ApiProperty({
@@ -30,42 +27,40 @@ class OrderItemDto {
   quantity: number;
 }
 
+class ShippingInfo {
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'Name of the recipient',
+  })
+  name: string;
+
+  @ApiProperty({
+    example: '+1234567890',
+    description: 'Phone number of the recipient',
+  })
+  phone: string;
+
+  @ApiProperty({
+    example: '123 Main St',
+    description: 'Full address of the recipient',
+  })
+  address: string;
+
+  @ApiProperty({
+    example: 'Main Street',
+    description: 'Street name of the address',
+  })
+  streetName: string;
+
+  @ApiProperty({
+    enum: AddressType,
+    example: AddressType.HOME,
+    description: 'Type of the address',
+  })
+  addressType: AddressType;
+}
+
 export class CreateOrderDto {
-  @ApiProperty({
-    enum: OrderStatus,
-    example: OrderStatus.PENDING,
-    description: 'Order status',
-  })
-  @IsNotEmpty()
-  @IsEnum(OrderStatus)
-  status: OrderStatus;
-
-  @ApiProperty({
-    enum: OrderPayStatus,
-    example: OrderPayStatus.PENDING,
-    description: 'Payment status of the order',
-  })
-  @IsNotEmpty()
-  @IsEnum(OrderPayStatus)
-  payStatus: OrderPayStatus;
-
-  @ApiProperty({
-    example: 200.5,
-    description: 'Total price of the order',
-  })
-  @IsNotEmpty()
-  @IsDecimal()
-  totalPrice: number;
-
-  @ApiProperty({
-    example: 20.0,
-    description: 'Discount price applied to the order',
-    required: false,
-  })
-  @IsOptional()
-  @IsDecimal()
-  discountPrice?: number;
-
   @ApiProperty({
     example: 'DISCOUNT123',
     description: 'Discount code applied to the order',
@@ -92,4 +87,9 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   orderItems: OrderItemDto[];
+
+  @ApiProperty({
+    required: false,
+  })
+  shipping?: ShippingInfo;
 }

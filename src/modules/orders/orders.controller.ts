@@ -21,6 +21,10 @@ import { Order } from './entities/order.entity';
 import { HttpMessage } from 'src/common/global/globalEnum';
 import { ApiTags } from '@nestjs/swagger';
 import { FilterOrderByUserDto, FilterOrderDto } from './dto/filter-order.dto';
+import {
+  ChangePayStatusOrderDto,
+  ChangeStatusOrderDto,
+} from './dto/status-order.dto';
 
 @ApiTags('Admin - Orders')
 @Controller('api/admin/orders')
@@ -131,6 +135,67 @@ export class OrdersController {
         null,
         HttpStatus.BAD_REQUEST,
         'Failed to delete order.',
+      );
+    }
+  }
+
+  @AuthAdmin()
+  @Put(':id/status')
+  async changeStatusOrder(
+    @Param('id') id: string,
+    @Body() changeStatusOrderDto: ChangeStatusOrderDto,
+  ): Promise<ResponseData<void>> {
+    try {
+      await this.ordersService.changeStatusOrder(+id, changeStatusOrderDto);
+      return new ResponseData<void>(
+        null,
+        HttpStatus.OK,
+        'Order status updated successfully.',
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return new ResponseData<void>(
+          null,
+          HttpStatus.NOT_FOUND,
+          `Order #${id} not found.`,
+        );
+      }
+      return new ResponseData<void>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        'Failed to update order status.',
+      );
+    }
+  }
+
+  @AuthAdmin()
+  @Put(':id/payment-status')
+  async changePayStatusOrder(
+    @Param('id') id: string,
+    @Body() changePayStatusOrderDto: ChangePayStatusOrderDto,
+  ): Promise<ResponseData<void>> {
+    try {
+      await this.ordersService.changePayStatusOrder(
+        +id,
+        changePayStatusOrderDto,
+      );
+      return new ResponseData<void>(
+        null,
+        HttpStatus.OK,
+        'Order pay status updated successfully.',
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return new ResponseData<void>(
+          null,
+          HttpStatus.NOT_FOUND,
+          `Order #${id} not found.`,
+        );
+      }
+      return new ResponseData<void>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        'Failed to update order status.',
       );
     }
   }
