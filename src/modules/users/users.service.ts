@@ -103,6 +103,10 @@ export class UsersService {
     return await this.userRepository.findOne({ where: { username } });
   }
 
+  async findOneByGoogleId(googleId: string): Promise<Users | undefined> {
+    return await this.userRepository.findOne({ where: { googleId } });
+  }
+
   async findOneByUsernameOrEmail(
     identifier: string,
   ): Promise<Users | undefined> {

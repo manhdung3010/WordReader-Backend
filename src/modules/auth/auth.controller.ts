@@ -6,6 +6,8 @@ import {
   HttpStatus,
   ConflictException,
   Req,
+  UseGuards,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthPayloadDto } from './dto/auth.dto';
@@ -15,6 +17,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { AuthUser } from 'src/common/decorators/http.decorators';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Authenticate')
 @Controller('api/auth')
@@ -66,6 +69,29 @@ export class AuthController {
       );
       return new ResponseData<any>(
         newUser,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        return new ResponseData<any>(null, HttpStatus.CONFLICT, error.message);
+      }
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+    }
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async googleLogin(@Req() req) {}
+
+  @Get('/google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(@Req() req) {
+    try {
+      const data = await this.authService.googleLogin(req.user);
+      return new ResponseData<any>(
+        data,
         HttpStatus.CREATED,
         HttpMessage.SUCCESS,
       );

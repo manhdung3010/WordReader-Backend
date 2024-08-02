@@ -15,12 +15,15 @@ export class Users extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
-  username: string;
+  @Column({ unique: true, nullable: true })
+  username: string | null;  // Make username nullable to handle cases where it's not provided
+
+  @Column({ nullable: true })
+  googleId: string | null;
 
   @Exclude()
-  @Column()
-  password: string;
+  @Column({ nullable: true })
+  password: string | null;  // Make password nullable for users registered via Google
 
   @Column()
   fullName: string;
@@ -28,20 +31,21 @@ export class Users extends BaseEntity {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  phoneNumber: string;
+  @Column({ nullable: true })
+  phoneNumber: string | null;
 
-  @Column('date')
-  date: Date;
+  @Column('date', { nullable: true })
+  date: Date | null;
 
-  @Column()
-  address: string;
+  @Column({ nullable: true })
+  address: string | null;
 
   @Column({
     type: 'enum',
     enum: Gender,
+    nullable: true,
   })
-  gender: Gender;
+  gender: Gender | null;
 
   @Column({
     type: 'enum',

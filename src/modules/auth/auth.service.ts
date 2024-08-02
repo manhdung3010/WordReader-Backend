@@ -50,6 +50,46 @@ export class AuthService {
     return { access_token, user };
   }
 
+  async googleLogin(
+    profile: any,
+  ): Promise<{ access_token: string; user: any }> {
+    if (!profile) {
+      throw new ConflictException('No user from Google');
+    }
+
+    // Check if user exists in the database
+    let user = await this.usersService.findOneByGoogleId(profile.googleId);
+
+    if (!user) {
+      // Nếu người dùng không tồn tại, kiểm tra email để tránh xung đột
+      const existingUser = await this.usersService.findOneByEmail(
+        profile.email,
+      );
+      if (existingUser) {
+        throw new ConflictException(
+          'Email is already associated with another account',
+        );
+      }
+
+      user = new Users();
+      user.email = profile.email;
+      user.fullName = profile.displayName;
+      user.username = profile.username || profile.email.split('@')[0];
+      user = await this.userRepository.save(user);
+    }
+
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+    };
+
+    const access_token = await this.jwtService.signAsync(payload);
+
+    return { access_token, user };
+  }
+
   async register(authPayload: RegisterDto): Promise<Users> {
     const existingUser = await this.usersService.findOneByName(
       authPayload.username,
