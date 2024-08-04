@@ -27,12 +27,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() authPayload: AuthPayloadDto) {
-    const { access_token, user } = await this.authService.logIn(
+    const { accessToken, user } = await this.authService.logIn(
       authPayload.identifier,
       authPayload.password,
     );
     return new ResponseData<any>(
-      { access_token, ...user },
+      { accessToken, ...user },
       HttpStatus.OK,
       HttpMessage.SUCCESS,
     );

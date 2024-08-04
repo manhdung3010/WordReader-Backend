@@ -26,7 +26,7 @@ export class AuthService {
   async logIn(
     identifier: string,
     password: string,
-  ): Promise<{ access_token: string; user: any }> {
+  ): Promise<{ accessToken: string; user: any }> {
     const user = await this.usersService.findOneByUsernameOrEmail(identifier);
 
     if (!user) {
@@ -45,14 +45,12 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role,
     };
-    const access_token = await this.jwtService.signAsync(payload);
+    const accessToken = await this.jwtService.signAsync(payload);
 
-    return { access_token, user };
+    return { accessToken, user };
   }
 
-  async googleLogin(
-    profile: any,
-  ): Promise<{ access_token: string; user: any }> {
+  async googleLogin(profile: any): Promise<{ accessToken: string; user: any }> {
     if (!profile) {
       throw new ConflictException('No user from Google');
     }
@@ -85,9 +83,9 @@ export class AuthService {
       role: user.role,
     };
 
-    const access_token = await this.jwtService.signAsync(payload);
+    const accessToken = await this.jwtService.signAsync(payload);
 
-    return { access_token, user };
+    return { accessToken, user };
   }
 
   async register(authPayload: RegisterDto): Promise<Users> {
