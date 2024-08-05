@@ -81,6 +81,24 @@ export class UsersController {
   }
 
   @AuthAdmin()
+  @Get('/getStats')
+  async getUserStats(): Promise<ResponseData<any>> {
+    try {
+      const result = await this.usersService.getUserStats();
+      if (typeof result === 'string') {
+        return new ResponseData<any>(null, HttpStatus.NOT_FOUND, result);
+      }
+      return new ResponseData<any>(result, HttpStatus.OK, HttpMessage.SUCCESS);
+    } catch (error) {
+      return new ResponseData<any>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        error.message,
+      );
+    }
+  }
+
+  @AuthAdmin()
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<ResponseData<Users>> {
     try {

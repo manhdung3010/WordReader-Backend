@@ -1,6 +1,7 @@
 import {
   BaseEntity,
   Column,
+  CreateDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -16,14 +17,14 @@ export class Users extends BaseEntity {
   id: number;
 
   @Column({ unique: true, nullable: true })
-  username: string | null;  // Make username nullable to handle cases where it's not provided
+  username: string | null;
 
   @Column({ nullable: true })
   googleId: string | null;
 
   @Exclude()
   @Column({ nullable: true })
-  password: string | null;  // Make password nullable for users registered via Google
+  password: string | null;
 
   @Column()
   fullName: string;
@@ -48,11 +49,19 @@ export class Users extends BaseEntity {
   gender: Gender | null;
 
   @Column({
+    default: true,
+  })
+  active: boolean;
+
+  @Column({
     type: 'enum',
     enum: Role,
     default: Role.User,
   })
   role: Role;
+
+  @CreateDateColumn()  
+  createdAt: Date;
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];

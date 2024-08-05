@@ -15,6 +15,9 @@ export class FilterUserDto {
   @ApiPropertyOptional({ enum: Role, enumName: 'Role' })
   role?: Role;
 
+  @ApiPropertyOptional({ type: Boolean })
+  active?: boolean;
+
   @ApiPropertyOptional()
   page?: number;
 

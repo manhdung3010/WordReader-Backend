@@ -7,9 +7,24 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { FilterUserDto } from './dto/filter-user.dto';
 import { instanceToPlain } from 'class-transformer';
+
+interface UserStats {
+  totalUsers: {
+    count: number;
+    weekChange: string;
+  };
+  activeUsers: {
+    count: number;
+    weekChange: string;
+  };
+  inactiveUsers: {
+    count: number;
+    weekChange: string;
+  };
+}
 
 @Injectable()
 export class UsersService {
@@ -66,6 +81,13 @@ export class UsersService {
     if (filter.role) {
       where.role = filter.role;
     }
+
+    if (typeof filter.active === 'boolean') {
+      where.active = filter.active;
+    } else if (typeof filter.active === 'string') {
+      where.active = filter.active === 'true';
+    }
+
     return where;
   }
 
@@ -130,6 +152,80 @@ export class UsersService {
     const result = await this.userRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);
+    }
+  }
+
+  async getUserStats(): Promise<UserStats> {
+    try {
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      const startOfLastWeek = new Date(startOfWeek);
+      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+      // Total Users
+      const totalUsers = await this.userRepository.count();
+      const usersLastWeekTotal = await this.userRepository.count({
+        where: {
+          createdAt: Between(startOfLastWeek, startOfWeek),
+        },
+      });
+
+      const weekChangeTotal =
+        usersLastWeekTotal > 0
+          ? (totalUsers - usersLastWeekTotal) / usersLastWeekTotal
+          : 0;
+
+      console.log(usersLastWeekTotal);
+
+      // Active Users
+      const activeUsers = await this.userRepository.count({
+        where: { active: true },
+      });
+      const activeUsersLastWeek = await this.userRepository.count({
+        where: {
+          active: true,
+          createdAt: Between(startOfLastWeek, startOfWeek),
+        },
+      });
+      const weekChangeActive =
+        activeUsersLastWeek > 0
+          ? (activeUsers - activeUsersLastWeek) / activeUsersLastWeek
+          : 0;
+
+      // Inactive Users
+      const inactiveUsers = await this.userRepository.count({
+        where: { active: false },
+      });
+      const inactiveUsersLastWeek = await this.userRepository.count({
+        where: {
+          active: false,
+          createdAt: Between(startOfLastWeek, startOfWeek),
+        },
+      });
+
+      const weekChangeInactive =
+        inactiveUsersLastWeek > 0
+          ? (inactiveUsers - inactiveUsersLastWeek) / inactiveUsersLastWeek
+          : 0;
+
+      return {
+        totalUsers: {
+          count: totalUsers,
+          weekChange: weekChangeTotal.toFixed(2),
+        },
+        activeUsers: {
+          count: activeUsers,
+          weekChange: weekChangeActive.toFixed(2),
+        },
+        inactiveUsers: {
+          count: inactiveUsers,
+          weekChange: weekChangeInactive.toFixed(2),
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      throw new Error('Failed to retrieve user statistics.');
     }
   }
 }
