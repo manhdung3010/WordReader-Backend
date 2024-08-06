@@ -11,6 +11,7 @@ import {
   IsDateString,
   IsEnum,
 } from 'class-validator';
+import { UserStatus } from 'src/common/enums/user-status.enum';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiProperty({ example: 'john_doe', required: false })
@@ -48,7 +49,12 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsEnum(Gender)
   gender?: Gender;
 
-  @ApiProperty({ example: 'USER', enum: Role, required: false })
+  @ApiProperty({ example: 'active', enum:  UserStatus, required: false })
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: UserStatus;
+
+  @ApiProperty({ example: 'user', enum: Role, required: false })
   @IsOptional()
   @IsEnum(Role)
   role?: Role;

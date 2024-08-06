@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { Gender } from 'src/common/enums/gender.enum';
 import { Role } from 'src/common/enums/role.enum';
+import { UserStatus } from 'src/common/enums/user-status.enum';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'john_doe' })
@@ -51,6 +52,11 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(Gender)
   gender?: Gender;
+
+  @ApiProperty({ example: 'active', enum:  UserStatus, required: false })
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: UserStatus;
 
   @ApiProperty({ example: 'USER', enum: Role, required: false })
   @IsOptional()
