@@ -10,6 +10,7 @@ import { Users } from './entities/users.entity';
 import { Between, Repository } from 'typeorm';
 import { FilterUserDto } from './dto/filter-user.dto';
 import { instanceToPlain } from 'class-transformer';
+import { UserStatus } from 'src/common/enums/user-status.enum';
 
 interface UserStats {
   totalUsers: {
@@ -82,10 +83,8 @@ export class UsersService {
       where.role = filter.role;
     }
 
-    if (typeof filter.active === 'boolean') {
-      where.active = filter.active;
-    } else if (typeof filter.active === 'string') {
-      where.active = filter.active === 'true';
+    if (filter.status) {
+      where.status = filter.status;
     }
 
     return where;
@@ -180,11 +179,11 @@ export class UsersService {
 
       // Active Users
       const activeUsers = await this.userRepository.count({
-        where: { active: true },
+        where: { status: UserStatus.active },
       });
       const activeUsersLastWeek = await this.userRepository.count({
         where: {
-          active: true,
+          status: UserStatus.active,
           createdAt: Between(startOfLastWeek, startOfWeek),
         },
       });
@@ -195,11 +194,11 @@ export class UsersService {
 
       // Inactive Users
       const inactiveUsers = await this.userRepository.count({
-        where: { active: false },
+        where: { status: UserStatus.inactive },
       });
       const inactiveUsersLastWeek = await this.userRepository.count({
         where: {
-          active: false,
+          status: UserStatus.inactive,
           createdAt: Between(startOfLastWeek, startOfWeek),
         },
       });

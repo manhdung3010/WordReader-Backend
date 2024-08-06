@@ -10,6 +10,7 @@ import { Gender } from 'src/common/enums/gender.enum';
 import { Role } from 'src/common/enums/role.enum';
 import { Order } from 'src/modules/orders/entities/order.entity';
 import { Exclude } from 'class-transformer';
+import { UserStatus } from 'src/common/enums/user-status.enum';
 
 @Entity()
 export class Users extends BaseEntity {
@@ -49,9 +50,11 @@ export class Users extends BaseEntity {
   gender: Gender | null;
 
   @Column({
-    default: true,
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.active,
   })
-  active: boolean;
+  status: UserStatus;
 
   @Column({
     type: 'enum',
@@ -60,7 +63,7 @@ export class Users extends BaseEntity {
   })
   role: Role;
 
-  @CreateDateColumn()  
+  @CreateDateColumn()
   createdAt: Date;
 
   @OneToMany(() => Order, (order) => order.user)
