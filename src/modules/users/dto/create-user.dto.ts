@@ -31,6 +31,11 @@ export class CreateUserDto {
   @IsString()
   fullName?: string;
 
+  @ApiProperty({ example: 'string', required: false })
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
   @ApiProperty({ example: '+1234567890', required: false })
   @IsOptional()
   @IsPhoneNumber(null)
@@ -53,7 +58,7 @@ export class CreateUserDto {
   @IsEnum(Gender)
   gender?: Gender;
 
-  @ApiProperty({ example: 'active', enum:  UserStatus, required: false })
+  @ApiProperty({ example: 'active', enum: UserStatus, required: false })
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;

@@ -72,6 +72,7 @@ export class AuthService {
       user = new Users();
       user.email = profile.email;
       user.fullName = profile.displayName;
+      user.avatar = profile.photo;
       user.username = profile.username || profile.email.split('@')[0];
       user = await this.userRepository.save(user);
     }

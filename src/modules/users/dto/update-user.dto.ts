@@ -29,6 +29,11 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsString()
   fullName?: string;
 
+  @ApiProperty({ example: 'string', required: false })
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
   @ApiProperty({ example: '+1234567890', required: false })
   @IsOptional()
   @IsPhoneNumber(null)
