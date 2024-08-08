@@ -7,7 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
-import { Between, Repository } from 'typeorm';
+import { Between, LessThanOrEqual, Repository } from 'typeorm';
 import { FilterUserDto } from './dto/filter-user.dto';
 import { instanceToPlain } from 'class-transformer';
 import { UserStatus } from 'src/common/enums/user-status.enum';
@@ -157,68 +157,83 @@ export class UsersService {
   async getUserStats(): Promise<UserStats> {
     try {
       const now = new Date();
+      // Start of the current week (Monday)
       const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      const startOfLastWeek = new Date(startOfWeek);
-      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+      startOfWeek.setDate(now.getDate() - now.getDay() + 1);
+
+      // End of last week (Sunday)
+      const endOfLastWeek = new Date(startOfWeek);
+      endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
 
       // Total Users
-      const totalUsers = await this.userRepository.count();
-      const usersLastWeekTotal = await this.userRepository.count({
+      const totalUsersThisWeek = await this.userRepository.count({
         where: {
-          createdAt: Between(startOfLastWeek, startOfWeek),
+          createdAt: Between(startOfWeek, now),
+        },
+      });
+      const totalUsersUpToEndOfLastWeek = await this.userRepository.count({
+        where: {
+          createdAt: LessThanOrEqual(endOfLastWeek),
         },
       });
 
       const weekChangeTotal =
-        usersLastWeekTotal > 0
-          ? (totalUsers - usersLastWeekTotal) / usersLastWeekTotal
-          : 0;
-
-      console.log(usersLastWeekTotal);
+        totalUsersUpToEndOfLastWeek > 0
+          ? totalUsersThisWeek / totalUsersUpToEndOfLastWeek
+          : totalUsersThisWeek;
 
       // Active Users
-      const activeUsers = await this.userRepository.count({
-        where: { status: UserStatus.active },
-      });
-      const activeUsersLastWeek = await this.userRepository.count({
+      const activeUsersThisWeek = await this.userRepository.count({
         where: {
           status: UserStatus.active,
-          createdAt: Between(startOfLastWeek, startOfWeek),
+          createdAt: Between(startOfWeek, now),
         },
       });
+      const totalActiveUsersUpToEndOfLastWeek = await this.userRepository.count(
+        {
+          where: {
+            status: UserStatus.active,
+            createdAt: LessThanOrEqual(endOfLastWeek),
+          },
+        },
+      );
+
       const weekChangeActive =
-        activeUsersLastWeek > 0
-          ? (activeUsers - activeUsersLastWeek) / activeUsersLastWeek
-          : 0;
+        totalActiveUsersUpToEndOfLastWeek > 0
+          ? activeUsersThisWeek / totalActiveUsersUpToEndOfLastWeek
+          : activeUsersThisWeek;
 
       // Inactive Users
-      const inactiveUsers = await this.userRepository.count({
-        where: { status: UserStatus.inactive },
-      });
-      const inactiveUsersLastWeek = await this.userRepository.count({
+      const inactiveUsersThisWeek = await this.userRepository.count({
         where: {
           status: UserStatus.inactive,
-          createdAt: Between(startOfLastWeek, startOfWeek),
+          createdAt: Between(startOfWeek, now),
         },
       });
+      const totalInactiveUsersUpToEndOfLastWeek =
+        await this.userRepository.count({
+          where: {
+            status: UserStatus.inactive,
+            createdAt: LessThanOrEqual(endOfLastWeek),
+          },
+        });
 
       const weekChangeInactive =
-        inactiveUsersLastWeek > 0
-          ? (inactiveUsers - inactiveUsersLastWeek) / inactiveUsersLastWeek
-          : 0;
+        totalInactiveUsersUpToEndOfLastWeek > 0
+          ? inactiveUsersThisWeek / totalInactiveUsersUpToEndOfLastWeek
+          : inactiveUsersThisWeek;
 
       return {
         totalUsers: {
-          count: totalUsers,
+          count: totalUsersThisWeek,
           weekChange: weekChangeTotal.toFixed(2),
         },
         activeUsers: {
-          count: activeUsers,
+          count: activeUsersThisWeek,
           weekChange: weekChangeActive.toFixed(2),
         },
         inactiveUsers: {
-          count: inactiveUsers,
+          count: inactiveUsersThisWeek,
           weekChange: weekChangeInactive.toFixed(2),
         },
       };
