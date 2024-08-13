@@ -29,7 +29,7 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @AuthAdmin()
-  @Post('uploads')
+  @Post('api/uploads')
   @ApiOperation({ summary: 'Upload multiple files' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

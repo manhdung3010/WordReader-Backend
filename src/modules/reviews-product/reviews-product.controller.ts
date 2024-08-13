@@ -18,7 +18,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AuthAdmin } from 'src/common/decorators/http.decorators';
 
 @ApiTags('Admin - Review Product')
-@Controller('admin/reviews-product')
+@Controller('api/admin/reviews-product')
 export class ReviewsProductController {
   constructor(private readonly reviewsProductService: ReviewsProductService) {}
 
@@ -96,7 +96,7 @@ export class ReviewsProductController {
 }
 
 @ApiTags('Public - Review Product')
-@Controller('reviews-product')
+@Controller('/api/public/reviews-product')
 export class PublicReviewsProductController {
   constructor(private readonly reviewsProductService: ReviewsProductService) {}
 

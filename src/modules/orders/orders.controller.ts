@@ -202,7 +202,7 @@ export class OrdersController {
 }
 
 @ApiTags('Public - Orders')
-@Controller('orders')
+@Controller('api/public/orders')
 export class OrdersPublicController {
   constructor(private readonly ordersService: OrdersService) {}
 
