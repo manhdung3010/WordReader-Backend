@@ -24,7 +24,7 @@ import { AuthAdmin } from 'src/common/decorators/http.decorators';
 import * as multer from 'multer'; // Import multer
 
 @ApiTags('Api Uploads')
-@Controller('files')
+@Controller('/api/files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
