@@ -29,7 +29,7 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @AuthAdmin()
-  @Post('api/uploads')
+  @Post('/uploads')
   @ApiOperation({ summary: 'Upload multiple files' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -46,7 +46,7 @@ export class FilesController {
     return this.filesService.saveMultipleFiles(files);
   }
 
-  @Get('uploads/:filename')
+  @Get(':filename')
   @ApiOperation({ summary: 'View a file' })
   async getFile(@Param('filename') filename: string, @Res() res: Response) {
     const fileUrl = await this.filesService.getFile(filename);
@@ -54,7 +54,7 @@ export class FilesController {
   }
 
   @AuthAdmin()
-  @Delete('uploads/:filename')
+  @Delete(':filename')
   @ApiOperation({ summary: 'Delete a file' })
   @ApiParam({ name: 'filename', description: 'Name of the file to delete' })
   async deleteFile(@Param('filename') filename: string) {
