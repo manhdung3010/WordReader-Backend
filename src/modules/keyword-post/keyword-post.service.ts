@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateKeywordPostDto } from './dto/create-keyword-post.dto';
 import { UpdateKeywordPostDto } from './dto/update-keyword-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -62,7 +62,7 @@ export class KeywordPostService {
     try {
       const keyword = await this.keywordPostRepository.findOne({ where: { id } });
       if (!keyword) {
-        throw new NotFoundException(`keyword with id ${id} not found`);
+        throw new Error(`keyword with id ${id} not found`);
       }
       return keyword;
     } catch (error) {

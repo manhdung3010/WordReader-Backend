@@ -7,7 +7,6 @@ import {
   Delete,
   Put,
   HttpStatus,
-  ConflictException,
 } from '@nestjs/common';
 import { ReviewsProductService } from './reviews-product.service';
 import { CreateReviewsProductDto } from './dto/create-reviews-product.dto';
@@ -29,9 +28,6 @@ export class ReviewsProductController {
       const createdReview = await this.reviewsProductService.create(createReviewsProductDto);
       return new ResponseData(createdReview, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
@@ -76,9 +72,6 @@ export class ReviewsProductController {
       const updatedReview = await this.reviewsProductService.update(+id, updateReviewsProductDto);
       return new ResponseData(updatedReview, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }

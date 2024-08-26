@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -169,7 +169,7 @@ export class ProductsService {
     try {
       const product = await this.productRepository.findOne({ where: { id } });
       if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
+        throw new Error(`Product with ID ${id} not found`);
       }
 
       let flashSalePrice = 0;
@@ -216,7 +216,7 @@ export class ProductsService {
       });
 
       if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
+        throw new Error(`Product with ID ${id} not found`);
       }
 
       if (productWarehouse) {
@@ -400,7 +400,7 @@ export class ProductsService {
     });
 
     if (!keyword) {
-      throw new NotFoundException(`Keyword with code ${keywordCode} not found`);
+      throw new Error(`Keyword with code ${keywordCode} not found`);
     }
 
     const [products, totalElements] = await this.productRepository
@@ -427,7 +427,7 @@ export class ProductsService {
     });
 
     if (!category) {
-      throw new NotFoundException(`Category with URL ${categoryUrl} not found`);
+      throw new Error(`Category with URL ${categoryUrl} not found`);
     }
 
     const [products, totalElements] = await this.productRepository
@@ -447,7 +447,7 @@ export class ProductsService {
       relations: ['categories', 'information', 'keywords', 'productWarehouse'],
     });
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new Error(`Product with ID ${id} not found`);
     }
     return product;
   }
@@ -466,7 +466,7 @@ export class ProductsService {
 
     const product = await this.findOne(id);
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new Error(`Product with ID ${id} not found`);
     }
 
     // If categoryIds are provided, fetch corresponding categories and associate them
@@ -534,7 +534,7 @@ export class ProductsService {
   async remove(id: number): Promise<void> {
     const result = await this.productRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new Error(`Product with ID ${id} not found`);
     }
   }
 }

@@ -69,6 +69,9 @@ export class Users extends BaseEntity {
   @CreateDateColumn()
   createdAt: Date;
 
+  @CreateDateColumn()
+  updateAt: Date;
+
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
 }

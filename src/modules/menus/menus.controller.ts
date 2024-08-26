@@ -6,7 +6,6 @@ import {
   Param,
   Delete,
   HttpStatus,
-  ConflictException,
   Query,
   Put,
 } from '@nestjs/common';
@@ -40,9 +39,6 @@ export class MenusController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Menu>(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -86,9 +82,6 @@ export class MenusController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Menu>(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -111,9 +104,6 @@ export class MenusController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Menu>(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -167,9 +157,6 @@ export class MenuPublicController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Menu>(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData<Menu>(
         null,
         HttpStatus.BAD_REQUEST,

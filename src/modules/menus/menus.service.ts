@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -71,7 +67,7 @@ export class MenusService {
       relations: ['parents', 'children'],
     });
     if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new Error(`Category with ID ${id} not found`);
     }
     return category;
   }
@@ -93,7 +89,7 @@ export class MenusService {
       where: { name },
     });
     if (existingCategoryByName) {
-      throw new ConflictException(`Category with name ${name} already exists`);
+      throw new Error(`Category with name ${name} already exists`);
     }
 
     // Kiểm tra trùng lặp url
@@ -101,7 +97,7 @@ export class MenusService {
       where: { url },
     });
     if (existingCategoryByUrl) {
-      throw new ConflictException(`Category with url ${url} already exists`);
+      throw new Error(`Category with url ${url} already exists`);
     }
 
     let parentCategories: Menu[] = [];

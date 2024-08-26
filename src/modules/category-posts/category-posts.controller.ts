@@ -6,7 +6,6 @@ import {
   Param,
   Delete,
   HttpStatus,
-  ConflictException,
   Query,
   Put,
 } from '@nestjs/common';
@@ -40,13 +39,6 @@ export class CategoryPostsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<CategoryPost>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -94,13 +86,6 @@ export class CategoryPostsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<CategoryPost>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -126,13 +111,6 @@ export class CategoryPostsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<CategoryPost>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -190,13 +168,6 @@ export class CategoryPostPublicController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<CategoryPost>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<CategoryPost>(
         null,
         HttpStatus.BAD_REQUEST,

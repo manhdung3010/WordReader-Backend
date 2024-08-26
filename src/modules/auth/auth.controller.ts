@@ -4,7 +4,6 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  ConflictException,
   Req,
   UseGuards,
   Get,
@@ -48,9 +47,6 @@ export class AuthController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<any>(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
@@ -73,9 +69,6 @@ export class AuthController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<any>(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }
@@ -96,9 +89,6 @@ export class AuthController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<any>(null, HttpStatus.CONFLICT, error.message);
-      }
       return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
     }
   }

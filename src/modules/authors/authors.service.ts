@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateAuthorDto } from './dto/create-author.dto';
 import { UpdateAuthorDto } from './dto/update-author.dto';
 import { FilterAuthorDto } from './dto/filter-author.dto';
@@ -62,7 +62,7 @@ export class AuthorsService {
     try {
       const author = await this.authorsRepository.findOne({ where: { id } });
       if (!author) {
-        throw new NotFoundException(`Author with id ${id} not found`);
+        throw new Error(`Author with id ${id} not found`);
       }
       return author;
     } catch (error) {

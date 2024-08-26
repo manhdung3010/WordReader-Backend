@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateReviewsProductDto } from './dto/create-reviews-product.dto';
 import { UpdateReviewsProductDto } from './dto/update-reviews-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -37,7 +37,7 @@ export class ReviewsProductService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${productId} not found`);
+      throw new Error(`Product with ID ${productId} not found`);
     }
 
     return await this.reviewsProductRepository.find({
@@ -52,7 +52,7 @@ export class ReviewsProductService {
       relations: ['product'],
     });
     if (!reviews) {
-      throw new NotFoundException(`reviews with ID ${id} not found`);
+      throw new Error(`reviews with ID ${id} not found`);
     }
     return reviews;
   }
@@ -68,7 +68,7 @@ export class ReviewsProductService {
   async remove(id: number): Promise<void> {
     const result = await this.reviewsProductRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Review with ID ${id} not found`);
+      throw new Error(`Review with ID ${id} not found`);
     }
   }
 }

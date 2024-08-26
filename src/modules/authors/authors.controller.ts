@@ -7,7 +7,6 @@ import {
   Delete,
   Query,
   HttpStatus,
-  ConflictException,
   Put,
 } from '@nestjs/common';
 import { AuthorsService } from './authors.service';
@@ -39,13 +38,6 @@ export class AuthorsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Author>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<Author>(
         null,
         HttpStatus.BAD_REQUEST,

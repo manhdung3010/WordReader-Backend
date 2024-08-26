@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthMessage } from 'src/common/constants/auth-message.enum';
@@ -30,13 +25,13 @@ export class AuthService {
     const user = await this.usersService.findOneByUsernameOrEmail(identifier);
 
     if (!user) {
-      throw new BadRequestException(AuthMessage.NOT_FOUND);
+      throw new Error(AuthMessage.NOT_FOUND);
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatch) {
-      throw new BadRequestException(AuthMessage.INVALID_PASSWORD);
+      throw new Error(AuthMessage.INVALID_PASSWORD);
     }
 
     const payload = {
@@ -52,7 +47,7 @@ export class AuthService {
 
   async googleLogin(profile: any): Promise<{ accessToken: string; user: any }> {
     if (!profile) {
-      throw new ConflictException('No user from Google');
+      throw new Error('No user from Google');
     }
 
     // Check if user exists in the database
@@ -64,9 +59,7 @@ export class AuthService {
         profile.email,
       );
       if (existingUser) {
-        throw new ConflictException(
-          'Email is already associated with another account',
-        );
+        throw new Error('Email is already associated with another account');
       }
 
       user = new Users();
@@ -94,14 +87,14 @@ export class AuthService {
       authPayload.username,
     );
     if (existingUser) {
-      throw new ConflictException('Username already exists');
+      throw new Error('Username already exists');
     }
 
     const existingUserEmail = await this.usersService.findOneByEmail(
       authPayload.email,
     );
     if (existingUserEmail) {
-      throw new ConflictException('Email already exists');
+      throw new Error('Email already exists');
     }
 
     const hashPassword = await bcrypt.hash(authPayload.password, 12);
@@ -128,7 +121,7 @@ export class AuthService {
     )) as Users;
 
     if (!existingUser) {
-      throw new NotFoundException('User not found');
+      throw new Error('User not found');
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -136,7 +129,7 @@ export class AuthService {
       existingUser.password,
     );
     if (!isPasswordValid) {
-      throw new ConflictException('Old password is incorrect');
+      throw new Error('Old password is incorrect');
     }
 
     const hashedPassword = await bcrypt.hash(forgotPasswordDto.newPassword, 12);

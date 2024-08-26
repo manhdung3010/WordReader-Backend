@@ -1,31 +1,26 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
-import { Between, LessThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { FilterUserDto } from './dto/filter-user.dto';
 import { instanceToPlain } from 'class-transformer';
-import { UserStatus } from 'src/common/enums/user-status.enum';
 
-interface UserStats {
-  totalUsers: {
-    count: number;
-    weekChange: string;
-  };
-  activeUsers: {
-    count: number;
-    weekChange: string;
-  };
-  inactiveUsers: {
-    count: number;
-    weekChange: string;
-  };
-}
+// interface UserStats {
+//   totalUsers: {
+//     count: number;
+//     weekChange: string;
+//   };
+//   activeUsers: {
+//     count: number;
+//     weekChange: string;
+//   };
+//   inactiveUsers: {
+//     count: number;
+//     weekChange: string;
+//   };
+// }
 
 @Injectable()
 export class UsersService {
@@ -40,7 +35,7 @@ export class UsersService {
       return await this.userRepository.save(newUser);
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
-        throw new ConflictException('Username or email already exists');
+        throw new Error('Username or email already exists');
       }
       throw error;
     }
@@ -141,105 +136,125 @@ export class UsersService {
       id: +id,
       ...updateUserDto,
     });
+
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new Error(`User with ID ${id} not found`);
     }
+
+    // Cập nhật trường updateAt với thời gian hiện tại
+    user.updateAt = new Date();
+
     return await this.userRepository.save(user);
   }
 
   async remove(id: number): Promise<void> {
     const result = await this.userRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new Error(`User with ID ${id} not found`);
     }
   }
 
-  async getUserStats(): Promise<UserStats> {
-    try {
-      const now = new Date();
-      // Start of the current week (Monday)
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay() + 1);
+  // async getUserStats(): Promise<UserStats> {
+  //   try {
+  //     const now = new Date();
+  //     // Start of the current week (Monday)
+  //     const startOfWeek = getStartOfWeek();
 
-      // End of last week (Sunday)
-      const endOfLastWeek = new Date(startOfWeek);
-      endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+  //     // End of last week (Sunday)
+  //     const endOfLastWeek = new Date(startOfWeek);
+  //     endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
 
-      // Total Users
-      const totalUsersThisWeek = await this.userRepository.count({
-        where: {
-          createdAt: Between(startOfWeek, now),
-        },
-      });
-      const totalUsersUpToEndOfLastWeek = await this.userRepository.count({
-        where: {
-          createdAt: LessThanOrEqual(endOfLastWeek),
-        },
-      });
+  //     // Total Users
+  //     const totalUsers = await this.userRepository.count({});
 
-      const weekChangeTotal =
-        totalUsersUpToEndOfLastWeek > 0
-          ? totalUsersThisWeek / totalUsersUpToEndOfLastWeek
-          : totalUsersThisWeek;
+  //     const totalUsersThisWeek = await this.userRepository.count({
+  //       where: {
+  //         updateAt: Between(startOfWeek, now),
+  //       },
+  //     });
 
-      // Active Users
-      const activeUsersThisWeek = await this.userRepository.count({
-        where: {
-          status: UserStatus.active,
-          createdAt: Between(startOfWeek, now),
-        },
-      });
-      const totalActiveUsersUpToEndOfLastWeek = await this.userRepository.count(
-        {
-          where: {
-            status: UserStatus.active,
-            createdAt: LessThanOrEqual(endOfLastWeek),
-          },
-        },
-      );
+  //     const totalUsersUpToEndOfLastWeek = await this.userRepository.count({
+  //       where: {
+  //         updateAt: LessThanOrEqual(endOfLastWeek),
+  //       },
+  //     });
 
-      const weekChangeActive =
-        totalActiveUsersUpToEndOfLastWeek > 0
-          ? activeUsersThisWeek / totalActiveUsersUpToEndOfLastWeek
-          : activeUsersThisWeek;
+  //     const weekChangeTotal =
+  //       totalUsersUpToEndOfLastWeek > 0
+  //         ? totalUsersThisWeek / totalUsersUpToEndOfLastWeek
+  //         : totalUsersThisWeek;
 
-      // Inactive Users
-      const inactiveUsersThisWeek = await this.userRepository.count({
-        where: {
-          status: UserStatus.inactive,
-          createdAt: Between(startOfWeek, now),
-        },
-      });
-      const totalInactiveUsersUpToEndOfLastWeek =
-        await this.userRepository.count({
-          where: {
-            status: UserStatus.inactive,
-            createdAt: LessThanOrEqual(endOfLastWeek),
-          },
-        });
+  //     // Active Users
+  //     const totalActiveUsers = await this.userRepository.count({
+  //       where: {
+  //         status: UserStatus.active,
+  //       },
+  //     });
 
-      const weekChangeInactive =
-        totalInactiveUsersUpToEndOfLastWeek > 0
-          ? inactiveUsersThisWeek / totalInactiveUsersUpToEndOfLastWeek
-          : inactiveUsersThisWeek;
+  //     const activeUsersThisWeek = await this.userRepository.count({
+  //       where: {
+  //         status: UserStatus.active,
+  //         updateAt: Between(startOfWeek, now),
+  //       },
+  //     });
+  //     const totalActiveUsersUpToEndOfLastWeek = await this.userRepository.count(
+  //       {
+  //         where: {
+  //           status: UserStatus.active,
+  //           updateAt: LessThanOrEqual(endOfLastWeek),
+  //         },
+  //       },
+  //     );
 
-      return {
-        totalUsers: {
-          count: totalUsersThisWeek,
-          weekChange: weekChangeTotal.toFixed(2),
-        },
-        activeUsers: {
-          count: activeUsersThisWeek,
-          weekChange: weekChangeActive.toFixed(2),
-        },
-        inactiveUsers: {
-          count: inactiveUsersThisWeek,
-          weekChange: weekChangeInactive.toFixed(2),
-        },
-      };
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      throw new Error('Failed to retrieve user statistics.');
-    }
-  }
+  //     const weekChangeActive =
+  //       totalActiveUsersUpToEndOfLastWeek > 0
+  //         ? activeUsersThisWeek / totalActiveUsersUpToEndOfLastWeek
+  //         : activeUsersThisWeek;
+
+  //     // Inactive Users
+
+  //     const totalInactiveUsers = await this.userRepository.count({
+  //       where: {
+  //         status: UserStatus.inactive,
+  //       },
+  //     });
+
+  //     const inactiveUsersThisWeek = await this.userRepository.count({
+  //       where: {
+  //         status: UserStatus.inactive,
+  //         updateAt: Between(startOfWeek, now),
+  //       },
+  //     });
+  //     const totalInactiveUsersUpToEndOfLastWeek =
+  //       await this.userRepository.count({
+  //         where: {
+  //           status: UserStatus.inactive,
+  //           updateAt: LessThanOrEqual(endOfLastWeek),
+  //         },
+  //       });
+
+  //     const weekChangeInactive =
+  //       totalInactiveUsersUpToEndOfLastWeek > 0
+  //         ? inactiveUsersThisWeek / totalInactiveUsersUpToEndOfLastWeek
+  //         : inactiveUsersThisWeek;
+
+  //     return {
+  //       totalUsers: {
+  //         count: totalUsers,
+  //         weekChange: weekChangeTotal.toFixed(2),
+  //       },
+  //       activeUsers: {
+  //         count: totalActiveUsers,
+  //         weekChange: weekChangeActive.toFixed(2),
+  //       },
+  //       inactiveUsers: {
+  //         count: totalInactiveUsers,
+  //         weekChange: weekChangeInactive.toFixed(2),
+  //       },
+  //     };
+  //   } catch (error) {
+  //     console.error('Error fetching user stats:', error);
+  //     throw new Error('Failed to retrieve user statistics.');
+  //   }
+  // }
 }

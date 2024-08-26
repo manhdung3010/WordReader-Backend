@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateCategoryPostDto } from './dto/create-category-post.dto';
 import { UpdateCategoryPostDto } from './dto/update-category-post.dto';
 import { CategoryPost } from './entities/category-post.entity';
@@ -69,12 +69,14 @@ export class CategoryPostsService {
       relations: ['parents', 'children'],
     });
     if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new Error(`Category with ID ${id} not found`);
     }
     return category;
   }
 
-  async create(createCategoryPostDto: CreateCategoryPostDto): Promise<CategoryPost> {
+  async create(
+    createCategoryPostDto: CreateCategoryPostDto,
+  ): Promise<CategoryPost> {
     const {
       name,
       description,
@@ -91,7 +93,7 @@ export class CategoryPostsService {
       where: { name },
     });
     if (existingCategoryByName) {
-      throw new ConflictException(`Category with name ${name} already exists`);
+      throw new Error(`Category with name ${name} already exists`);
     }
 
     // Kiểm tra trùng lặp url
@@ -99,7 +101,7 @@ export class CategoryPostsService {
       where: { url },
     });
     if (existingCategoryByUrl) {
-      throw new ConflictException(`Category with url ${url} already exists`);
+      throw new Error(`Category with url ${url} already exists`);
     }
 
     let parentCategories: CategoryPost[] = [];
@@ -120,8 +122,6 @@ export class CategoryPostsService {
 
     return this.categoryPostRepository.save(newCategory);
   }
-
-
 
   async update(
     id: number,

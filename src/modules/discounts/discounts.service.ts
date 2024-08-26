@@ -1,10 +1,5 @@
 import { CheckDiscountDto } from './dto/check-discount.dto';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, In, Repository } from 'typeorm';
 import { CreateDiscountDto } from './dto/create-discount.dto';
@@ -33,7 +28,7 @@ export class DiscountsService {
       where: { name: createDiscountDto.name },
     });
     if (existingDiscountByName) {
-      throw new ConflictException(
+      throw new Error(
         `Discount with name ${createDiscountDto.name} already exists`,
       );
     }
@@ -42,7 +37,7 @@ export class DiscountsService {
       where: { code: createDiscountDto.code },
     });
     if (existingDiscountByCode) {
-      throw new ConflictException(
+      throw new Error(
         `Discount with code ${createDiscountDto.code} already exists`,
       );
     }
@@ -177,7 +172,7 @@ export class DiscountsService {
         relations: ['categoryDiscount'],
       });
       if (!discount) {
-        throw new NotFoundException(`discount with id ${id} not found`);
+        throw new Error(`discount with id ${id} not found`);
       }
       return discount;
     } catch (error) {
@@ -194,7 +189,7 @@ export class DiscountsService {
         relations: ['categoryDiscount'],
       });
       if (!discount) {
-        throw new NotFoundException(`discount with id ${code} not found`);
+        throw new Error(`discount with id ${code} not found`);
       }
 
       const currentDateTime = new Date();
@@ -202,7 +197,7 @@ export class DiscountsService {
         currentDateTime < discount.startTime ||
         currentDateTime > discount.endTime
       ) {
-        throw new BadRequestException(
+        throw new Error(
           `Discount with code "${code}" is not currently active`,
         );
       }
@@ -221,7 +216,7 @@ export class DiscountsService {
   ): Promise<Discount> {
     const existingDiscount = await this.findOne(id);
     if (!existingDiscount) {
-      throw new NotFoundException(`Discount with id ${id} not found`);
+      throw new Error(`Discount with id ${id} not found`);
     }
 
     // Remove categoryDiscount from DTO
@@ -261,7 +256,7 @@ export class DiscountsService {
     });
 
     if (!discount) {
-      throw new NotFoundException(`Discount with code "${code}" not found`);
+      throw new Error(`Discount with code "${code}" not found`);
     }
 
     const currentDateTime = new Date();
@@ -270,13 +265,13 @@ export class DiscountsService {
       currentDateTime < discount.startTime ||
       currentDateTime > discount.endTime
     ) {
-      throw new NotFoundException(
+      throw new Error(
         `Discount with code "${code}" is not currently active`,
       );
     }
 
     if (discount.usageLimit <= 0) {
-      throw new NotFoundException(
+      throw new Error(
         `Discount with code "${code}" has reached its usage limit`,
       );
     }

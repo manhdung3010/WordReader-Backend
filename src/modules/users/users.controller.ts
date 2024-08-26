@@ -6,7 +6,6 @@ import {
   Param,
   Delete,
   HttpStatus,
-  ConflictException,
   Put,
   Query,
 } from '@nestjs/common';
@@ -38,13 +37,7 @@ export class UsersController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Users>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
+
       return new ResponseData<Users>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -80,23 +73,23 @@ export class UsersController {
     }
   }
 
-  @AuthAdmin()
-  @Get('/getStats')
-  async getUserStats(): Promise<ResponseData<any>> {
-    try {
-      const result = await this.usersService.getUserStats();
-      if (typeof result === 'string') {
-        return new ResponseData<any>(null, HttpStatus.NOT_FOUND, result);
-      }
-      return new ResponseData<any>(result, HttpStatus.OK, HttpMessage.SUCCESS);
-    } catch (error) {
-      return new ResponseData<any>(
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        error.message,
-      );
-    }
-  }
+  // @AuthAdmin()
+  // @Get('/getStats')
+  // async getUserStats(): Promise<ResponseData<any>> {
+  //   try {
+  //     const result = await this.usersService.getUserStats();
+  //     if (typeof result === 'string') {
+  //       return new ResponseData<any>(null, HttpStatus.NOT_FOUND, result);
+  //     }
+  //     return new ResponseData<any>(result, HttpStatus.OK, HttpMessage.SUCCESS);
+  //   } catch (error) {
+  //     return new ResponseData<any>(
+  //       null,
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //       error.message,
+  //     );
+  //   }
+  // }
 
   @AuthAdmin()
   @Get(':id')

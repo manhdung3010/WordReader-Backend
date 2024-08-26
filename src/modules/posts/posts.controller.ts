@@ -6,11 +6,10 @@ import {
   Param,
   Delete,
   HttpStatus,
-  ConflictException,
   Query,
   Req,
   Put,
-  NotFoundException,
+
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -47,13 +46,7 @@ export class PostsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Posts>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
+
       return new ResponseData<Posts>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -202,9 +195,7 @@ export class PostsPublicController {
         size,
       );
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData(null, HttpStatus.NOT_FOUND, 'Posts not found.');
-      }
+
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
@@ -233,9 +224,7 @@ export class PostsPublicController {
         size,
       );
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData(null, HttpStatus.NOT_FOUND, 'Posts not found.');
-      }
+  
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }

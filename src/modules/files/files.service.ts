@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UploadedFileDto } from './dto/uploaded-file.dto';
 import { v2 as cloudinaryV2 } from 'cloudinary';
 import * as path from 'path'; // Ensure path is imported
@@ -24,7 +20,7 @@ export class FilesService {
     for (const file of files) {
       const fileExtName = path.extname(file.originalname);
       if (!allowedExtensions.includes(fileExtName)) {
-        throw new BadRequestException('Invalid file extension');
+        throw new Error('Invalid file extension');
       }
 
       const uploadResult = await new Promise<any>((resolve, reject) => {
@@ -65,7 +61,7 @@ export class FilesService {
       const resource = await cloudinaryV2.api.resource(publicId);
       return resource.secure_url;
     } catch (error) {
-      throw new NotFoundException(`File ${publicId} not found`);
+      throw new Error(`File ${publicId} not found`);
     }
   }
 
@@ -74,7 +70,7 @@ export class FilesService {
       await cloudinaryV2.uploader.destroy(publicId);
       return `${publicId} has been successfully removed`;
     } catch (error) {
-      throw new NotFoundException(`File ${publicId} not found`);
+      throw new Error(`File ${publicId} not found`);
     }
   }
 }

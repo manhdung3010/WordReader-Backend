@@ -7,8 +7,6 @@ import {
   Delete,
   Req,
   HttpStatus,
-  ConflictException,
-  NotFoundException,
   Put,
   Query,
 } from '@nestjs/common';
@@ -124,13 +122,6 @@ export class OrdersController {
         'Order deleted successfully.',
       );
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData<void>(
-          null,
-          HttpStatus.NOT_FOUND,
-          `Order #${id} not found.`,
-        );
-      }
       return new ResponseData<void>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -153,13 +144,6 @@ export class OrdersController {
         'Order status updated successfully.',
       );
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData<void>(
-          null,
-          HttpStatus.NOT_FOUND,
-          `Order #${id} not found.`,
-        );
-      }
       return new ResponseData<void>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -185,13 +169,6 @@ export class OrdersController {
         'Order pay status updated successfully.',
       );
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData<void>(
-          null,
-          HttpStatus.NOT_FOUND,
-          `Order #${id} not found.`,
-        );
-      }
       return new ResponseData<void>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -224,13 +201,6 @@ export class OrdersPublicController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Order>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<Order>(
         null,
         HttpStatus.BAD_REQUEST,

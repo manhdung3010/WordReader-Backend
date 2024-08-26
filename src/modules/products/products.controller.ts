@@ -7,7 +7,6 @@ import {
   Delete,
   Put,
   HttpStatus,
-  NotFoundException,
   Query,
   Patch,
 } from '@nestjs/common';
@@ -77,13 +76,6 @@ export class ProductsController {
       const product = await this.productsService.findOne(+id);
       return new ResponseData(product, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return new ResponseData(
-          null,
-          HttpStatus.NOT_FOUND,
-          'Product not found.',
-        );
-      }
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }

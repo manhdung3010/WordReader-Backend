@@ -1,7 +1,5 @@
 import {
-  BadRequestException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindManyOptions, In, Repository } from 'typeorm';
@@ -48,7 +46,7 @@ export class OrdersService {
     const userOrder = await this.usersRepository.findOneBy({ id: user.userId });
 
     if (!userOrder) {
-      throw new NotFoundException(`User with ID ${user.userId} not found`);
+      throw new Error(`User with ID ${user.userId} not found`);
     }
 
     const productIds =
@@ -61,12 +59,12 @@ export class OrdersService {
     for (const itemDto of createOrderDto.orderItems) {
       const product = productData.find((p) => p.id === itemDto.productId);
       if (!product) {
-        throw new NotFoundException(
+        throw new Error(
           `Product with ID ${itemDto.productId} not found`,
         );
       }
       if (product.status === StatusProduct.OUT_OF_STOCK) {
-        throw new BadRequestException(
+        throw new Error(
           `Product with ID ${itemDto.productId} is out of stock`,
         );
       }
@@ -85,7 +83,7 @@ export class OrdersService {
     const orderItemsWithDetails = createOrderDto.orderItems.map((itemDto) => {
       const product = productData.find((p) => p.id === itemDto.productId);
       if (!product) {
-        throw new NotFoundException(
+        throw new Error(
           `Product with ID ${itemDto.productId} not found`,
         );
       }
@@ -108,7 +106,7 @@ export class OrdersService {
         discountResult.discount.usageLimit -= 1;
         await this.discountRepository.save(discountResult.discount);
       } catch (error) {
-        throw new BadRequestException(
+        throw new Error(
           `Invalid discount code: ${error.message}`,
         );
       }
@@ -130,13 +128,13 @@ export class OrdersService {
       });
 
       if (!productWarehouse) {
-        throw new NotFoundException(
+        throw new Error(
           `Product warehouse for product ID ${item.productId} not found`,
         );
       }
 
       if (productWarehouse.displayQuantity < item.quantity) {
-        throw new BadRequestException(
+        throw new Error(
           `Not enough stock for product ID ${item.productId}`,
         );
       }
@@ -212,7 +210,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order #${id} not found`);
+      throw new Error(`Order #${id} not found`);
     }
 
     return instanceToPlain(order) as Order;
@@ -263,7 +261,7 @@ export class OrdersService {
       ...updateOrderDto,
     });
     if (!result) {
-      throw new NotFoundException(`Order #${id} not found`);
+      throw new Error(`Order #${id} not found`);
     }
     return this.orderRepository.save(result);
   }
@@ -274,10 +272,10 @@ export class OrdersService {
     if (order) {
       const result = await this.orderRepository.delete(id);
       if (result.affected === 0) {
-        throw new NotFoundException(`Order #${id} not found`);
+        throw new Error(`Order #${id} not found`);
       }
     } else {
-      throw new NotFoundException(`Order #${id} not found`);
+      throw new Error(`Order #${id} not found`);
     }
   }
 
@@ -290,11 +288,11 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+      throw new Error(`Order with ID ${orderId} not found`);
     }
 
     if (!Object.values(OrderStatus).includes(changeStatusOrderDto.status)) {
-      throw new BadRequestException(
+      throw new Error(
         `Invalid order status: ${changeStatusOrderDto.status}`,
       );
     }
@@ -310,7 +308,7 @@ export class OrdersService {
       });
 
       if (!productWarehouse) {
-        throw new NotFoundException(
+        throw new Error(
           `Product warehouse for product ID ${item.product.id} not found`,
         );
       }
@@ -336,14 +334,14 @@ export class OrdersService {
     const order = await this.orderRepository.findOneBy({ id: orderId });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+      throw new Error(`Order with ID ${orderId} not found`);
     }
 
     // Validate new status if needed (e.g., ensure it is a valid status)
     if (
       !Object.values(OrderPayStatus).includes(changePayStatusOrderDto.payStatus)
     ) {
-      throw new BadRequestException(
+      throw new Error(
         `Invalid order payStatus: ${changePayStatusOrderDto.payStatus}`,
       );
     }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -118,7 +118,7 @@ export class PostsService {
       relations: ['categories', 'keywords'],
     });
     if (!post) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new Error(`Product with ID ${id} not found`);
     }
     return post;
   }
@@ -137,7 +137,7 @@ export class PostsService {
     });
 
     if (!keyword) {
-      throw new NotFoundException(`Keyword with code ${keywordCode} not found`);
+      throw new Error(`Keyword with code ${keywordCode} not found`);
     }
 
     // Tìm các bài viết liên quan đến keyword
@@ -167,7 +167,7 @@ export class PostsService {
       });
   
       if (!category) {
-        throw new NotFoundException(
+        throw new Error(
           `Category with URL ${categoryUrl} not found`,
         );
       }
@@ -217,7 +217,7 @@ export class PostsService {
   async remove(id: number): Promise<void> {
     const result = await this.postRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new Error(`Product with ID ${id} not found`);
     }
   }
 }

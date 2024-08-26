@@ -8,7 +8,6 @@ import {
   Put,
   Query,
   HttpStatus,
-  ConflictException,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -39,13 +38,6 @@ export class CategoriesController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Categories>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -93,13 +85,6 @@ export class CategoriesController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Categories>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -125,13 +110,6 @@ export class CategoriesController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Categories>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -189,13 +167,6 @@ export class CategoryProductPublicController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        return new ResponseData<Categories>(
-          null,
-          HttpStatus.CONFLICT,
-          error.message,
-        );
-      }
       return new ResponseData<Categories>(
         null,
         HttpStatus.BAD_REQUEST,

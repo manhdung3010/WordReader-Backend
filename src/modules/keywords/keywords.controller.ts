@@ -6,7 +6,6 @@ import {
   Param,
   Delete,
   HttpStatus,
-  ConflictException,
   Query,
   Put,
 } from '@nestjs/common';
@@ -39,7 +38,7 @@ export class KeywordsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
+      if (error instanceof Error) {
         return new ResponseData<Keyword>(
           null,
           HttpStatus.CONFLICT,
