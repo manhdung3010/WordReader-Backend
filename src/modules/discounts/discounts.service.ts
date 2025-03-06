@@ -197,9 +197,7 @@ export class DiscountsService {
         currentDateTime < discount.startTime ||
         currentDateTime > discount.endTime
       ) {
-        throw new Error(
-          `Discount with code "${code}" is not currently active`,
-        );
+        throw new Error(`Discount with code "${code}" is not currently active`);
       }
 
       return discount;
@@ -219,21 +217,22 @@ export class DiscountsService {
       throw new Error(`Discount with id ${id} not found`);
     }
 
-    // Remove categoryDiscount from DTO
+    // Loại bỏ categoryDiscount khỏi DTO
     const { categoryDiscount, ...discountData } = updateDiscountDto;
 
     try {
-      // Update discount without categoryDiscount
-      await this.discountRepository.update(id, discountData);
+      // Cập nhật các trường đơn giản trước
+      Object.assign(existingDiscount, discountData);
 
-      // Update categoryDiscount if provided
+      // Cập nhật categoryDiscount nếu có
       if (categoryDiscount && categoryDiscount.length > 0) {
-        const categories =
-          await this.categoriesRepository.findByIds(categoryDiscount);
+        const categories = await this.categoriesRepository.findBy({
+          id: In(categoryDiscount),
+        });
         existingDiscount.categoryDiscount = categories;
       }
 
-      // Save the updated discount
+      // Lưu toàn bộ thay đổi
       return await this.discountRepository.save(existingDiscount);
     } catch (error) {
       throw new Error(
@@ -265,9 +264,7 @@ export class DiscountsService {
       currentDateTime < discount.startTime ||
       currentDateTime > discount.endTime
     ) {
-      throw new Error(
-        `Discount with code "${code}" is not currently active`,
-      );
+      throw new Error(`Discount with code "${code}" is not currently active`);
     }
 
     if (discount.usageLimit <= 0) {

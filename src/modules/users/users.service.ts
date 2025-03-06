@@ -3,30 +3,41 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, Repository } from 'typeorm';
 import { FilterUserDto } from './dto/filter-user.dto';
 import { instanceToPlain } from 'class-transformer';
+import { UserStatus } from 'src/common/enums/user-status.enum';
+import { getStartOfWeek } from 'src/utils/time';
+import { UserViewHistory } from './entities/user-view-history';
+import { LogViewDto } from './dto/log-view.dto';
+import { Product } from '../products/entities/product.entity';
 
-// interface UserStats {
-//   totalUsers: {
-//     count: number;
-//     weekChange: string;
-//   };
-//   activeUsers: {
-//     count: number;
-//     weekChange: string;
-//   };
-//   inactiveUsers: {
-//     count: number;
-//     weekChange: string;
-//   };
-// }
+interface UserStats {
+  totalUsers: {
+    count: number;
+    weekChange: string;
+  };
+  activeUsers: {
+    count: number;
+    weekChange: string;
+  };
+  inactiveUsers: {
+    count: number;
+    weekChange: string;
+  };
+}
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
+
+    @InjectRepository(UserViewHistory)
+    private viewRepo: Repository<UserViewHistory>,
+
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Users> {
@@ -154,107 +165,138 @@ export class UsersService {
     }
   }
 
-  // async getUserStats(): Promise<UserStats> {
-  //   try {
-  //     const now = new Date();
-  //     // Start of the current week (Monday)
-  //     const startOfWeek = getStartOfWeek();
+  async getUserStats(): Promise<UserStats> {
+    try {
+      const now = new Date();
+      // Start of the current week (Monday)
+      const startOfWeek = getStartOfWeek();
 
-  //     // End of last week (Sunday)
-  //     const endOfLastWeek = new Date(startOfWeek);
-  //     endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+      // End of last week (Sunday)
+      const endOfLastWeek = new Date(startOfWeek);
+      endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
 
-  //     // Total Users
-  //     const totalUsers = await this.userRepository.count({});
+      // Total Users
+      const totalUsers = await this.userRepository.count({});
 
-  //     const totalUsersThisWeek = await this.userRepository.count({
-  //       where: {
-  //         updateAt: Between(startOfWeek, now),
-  //       },
-  //     });
+      const totalUsersThisWeek = await this.userRepository.count({
+        where: {
+          updateAt: Between(startOfWeek, now),
+        },
+      });
 
-  //     const totalUsersUpToEndOfLastWeek = await this.userRepository.count({
-  //       where: {
-  //         updateAt: LessThanOrEqual(endOfLastWeek),
-  //       },
-  //     });
+      const totalUsersUpToEndOfLastWeek = await this.userRepository.count({
+        where: {
+          updateAt: LessThanOrEqual(endOfLastWeek),
+        },
+      });
 
-  //     const weekChangeTotal =
-  //       totalUsersUpToEndOfLastWeek > 0
-  //         ? totalUsersThisWeek / totalUsersUpToEndOfLastWeek
-  //         : totalUsersThisWeek;
+      const weekChangeTotal =
+        totalUsersUpToEndOfLastWeek > 0
+          ? totalUsersThisWeek / totalUsersUpToEndOfLastWeek
+          : totalUsersThisWeek;
 
-  //     // Active Users
-  //     const totalActiveUsers = await this.userRepository.count({
-  //       where: {
-  //         status: UserStatus.active,
-  //       },
-  //     });
+      // Active Users
+      const totalActiveUsers = await this.userRepository.count({
+        where: {
+          status: UserStatus.active,
+        },
+      });
 
-  //     const activeUsersThisWeek = await this.userRepository.count({
-  //       where: {
-  //         status: UserStatus.active,
-  //         updateAt: Between(startOfWeek, now),
-  //       },
-  //     });
-  //     const totalActiveUsersUpToEndOfLastWeek = await this.userRepository.count(
-  //       {
-  //         where: {
-  //           status: UserStatus.active,
-  //           updateAt: LessThanOrEqual(endOfLastWeek),
-  //         },
-  //       },
-  //     );
+      const activeUsersThisWeek = await this.userRepository.count({
+        where: {
+          status: UserStatus.active,
+          updateAt: Between(startOfWeek, now),
+        },
+      });
+      const totalActiveUsersUpToEndOfLastWeek = await this.userRepository.count(
+        {
+          where: {
+            status: UserStatus.active,
+            updateAt: LessThanOrEqual(endOfLastWeek),
+          },
+        },
+      );
 
-  //     const weekChangeActive =
-  //       totalActiveUsersUpToEndOfLastWeek > 0
-  //         ? activeUsersThisWeek / totalActiveUsersUpToEndOfLastWeek
-  //         : activeUsersThisWeek;
+      const weekChangeActive =
+        totalActiveUsersUpToEndOfLastWeek > 0
+          ? activeUsersThisWeek / totalActiveUsersUpToEndOfLastWeek
+          : activeUsersThisWeek;
 
-  //     // Inactive Users
+      // Inactive Users
 
-  //     const totalInactiveUsers = await this.userRepository.count({
-  //       where: {
-  //         status: UserStatus.inactive,
-  //       },
-  //     });
+      const totalInactiveUsers = await this.userRepository.count({
+        where: {
+          status: UserStatus.inactive,
+        },
+      });
 
-  //     const inactiveUsersThisWeek = await this.userRepository.count({
-  //       where: {
-  //         status: UserStatus.inactive,
-  //         updateAt: Between(startOfWeek, now),
-  //       },
-  //     });
-  //     const totalInactiveUsersUpToEndOfLastWeek =
-  //       await this.userRepository.count({
-  //         where: {
-  //           status: UserStatus.inactive,
-  //           updateAt: LessThanOrEqual(endOfLastWeek),
-  //         },
-  //       });
+      const inactiveUsersThisWeek = await this.userRepository.count({
+        where: {
+          status: UserStatus.inactive,
+          updateAt: Between(startOfWeek, now),
+        },
+      });
+      const totalInactiveUsersUpToEndOfLastWeek =
+        await this.userRepository.count({
+          where: {
+            status: UserStatus.inactive,
+            updateAt: LessThanOrEqual(endOfLastWeek),
+          },
+        });
 
-  //     const weekChangeInactive =
-  //       totalInactiveUsersUpToEndOfLastWeek > 0
-  //         ? inactiveUsersThisWeek / totalInactiveUsersUpToEndOfLastWeek
-  //         : inactiveUsersThisWeek;
+      const weekChangeInactive =
+        totalInactiveUsersUpToEndOfLastWeek > 0
+          ? inactiveUsersThisWeek / totalInactiveUsersUpToEndOfLastWeek
+          : inactiveUsersThisWeek;
 
-  //     return {
-  //       totalUsers: {
-  //         count: totalUsers,
-  //         weekChange: weekChangeTotal.toFixed(2),
-  //       },
-  //       activeUsers: {
-  //         count: totalActiveUsers,
-  //         weekChange: weekChangeActive.toFixed(2),
-  //       },
-  //       inactiveUsers: {
-  //         count: totalInactiveUsers,
-  //         weekChange: weekChangeInactive.toFixed(2),
-  //       },
-  //     };
-  //   } catch (error) {
-  //     console.error('Error fetching user stats:', error);
-  //     throw new Error('Failed to retrieve user statistics.');
-  //   }
-  // }
+      return {
+        totalUsers: {
+          count: totalUsers,
+          weekChange: weekChangeTotal.toFixed(2),
+        },
+        activeUsers: {
+          count: totalActiveUsers,
+          weekChange: weekChangeActive.toFixed(2),
+        },
+        inactiveUsers: {
+          count: totalInactiveUsers,
+          weekChange: weekChangeInactive.toFixed(2),
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      throw new Error('Failed to retrieve user statistics.');
+    }
+  }
+
+  async logView(logViewDto: LogViewDto, user: any): Promise<any> {
+    // Kiểm tra người dùng
+    const existingUser = await this.userRepository.findOneBy({
+      id: user.userId,
+    });
+    if (!existingUser) {
+      throw new Error(`User with ID ${user.userId} not found`);
+    }
+
+    // Kiểm tra sản phẩm (nếu cần)
+    const product = await this.productRepository.findOneBy({
+      id: Number(logViewDto.productId),
+    });
+    if (!product) {
+      throw new Error(`Product with ID ${logViewDto.productId} not found`);
+    }
+
+    // Tạo bản ghi lịch sử xem
+    const viewRecord = this.viewRepo.create({
+      user: existingUser, // Đã là entity nên OK
+      product: product, // Đảm bảo đúng kiểu dữ liệu
+      device: logViewDto.device || 'UNKNOWN',
+      referrer: logViewDto.referrer || 'Direct',
+      duration: logViewDto.duration ?? null,
+      viewTime: new Date(),
+    });
+
+    // Lưu vào database
+    return await this.viewRepo.save(viewRecord);
+  }
 }

@@ -26,7 +26,7 @@ export class Menu {
   @Column()
   homeDisplay: boolean;
 
-  @Column()
+  @Column({ nullable: true, default: '' })
   image: string;
 
   @Column('json', { nullable: true })

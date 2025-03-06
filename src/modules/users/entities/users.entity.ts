@@ -11,6 +11,7 @@ import { Role } from 'src/common/enums/role.enum';
 import { Order } from 'src/modules/orders/entities/order.entity';
 import { Exclude } from 'class-transformer';
 import { UserStatus } from 'src/common/enums/user-status.enum';
+import { UserViewHistory } from './user-view-history';
 
 @Entity()
 export class Users extends BaseEntity {
@@ -74,4 +75,7 @@ export class Users extends BaseEntity {
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  @OneToMany(() => UserViewHistory, (viewHistory) => viewHistory.user)
+  viewHistory: UserViewHistory[];
 }

@@ -1,6 +1,4 @@
-import {
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindManyOptions, In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -59,14 +57,10 @@ export class OrdersService {
     for (const itemDto of createOrderDto.orderItems) {
       const product = productData.find((p) => p.id === itemDto.productId);
       if (!product) {
-        throw new Error(
-          `Product with ID ${itemDto.productId} not found`,
-        );
+        throw new Error(`Product with ID ${itemDto.productId} not found`);
       }
       if (product.status === StatusProduct.OUT_OF_STOCK) {
-        throw new Error(
-          `Product with ID ${itemDto.productId} is out of stock`,
-        );
+        throw new Error(`Product with ID ${itemDto.productId} is out of stock`);
       }
     }
 
@@ -83,9 +77,7 @@ export class OrdersService {
     const orderItemsWithDetails = createOrderDto.orderItems.map((itemDto) => {
       const product = productData.find((p) => p.id === itemDto.productId);
       if (!product) {
-        throw new Error(
-          `Product with ID ${itemDto.productId} not found`,
-        );
+        throw new Error(`Product with ID ${itemDto.productId} not found`);
       }
       return { ...itemDto, product };
     });
@@ -106,13 +98,11 @@ export class OrdersService {
         discountResult.discount.usageLimit -= 1;
         await this.discountRepository.save(discountResult.discount);
       } catch (error) {
-        throw new Error(
-          `Invalid discount code: ${error.message}`,
-        );
+        throw new Error(`Invalid discount code: ${error.message}`);
       }
     }
 
-    const newOrder = this.orderRepository.create({
+    let newOrder = this.orderRepository.create({
       ...createOrderDto,
       user: userOrder,
       discountPrice: discountAmount,
@@ -134,9 +124,7 @@ export class OrdersService {
       }
 
       if (productWarehouse.displayQuantity < item.quantity) {
-        throw new Error(
-          `Not enough stock for product ID ${item.productId}`,
-        );
+        throw new Error(`Not enough stock for product ID ${item.productId}`);
       }
 
       productWarehouse.displayQuantity -= item.quantity;
@@ -144,6 +132,12 @@ export class OrdersService {
       await this.productWarehouseRepository.save(productWarehouse);
     }
 
+    newOrder = await this.orderRepository.save(newOrder);
+
+    // Cập nhật orderCode theo ID
+    newOrder.orderCode = `ORD-${newOrder.id}`;
+
+    // Lưu lại với orderCode
     return this.orderRepository.save(newOrder);
   }
 
@@ -292,9 +286,7 @@ export class OrdersService {
     }
 
     if (!Object.values(OrderStatus).includes(changeStatusOrderDto.status)) {
-      throw new Error(
-        `Invalid order status: ${changeStatusOrderDto.status}`,
-      );
+      throw new Error(`Invalid order status: ${changeStatusOrderDto.status}`);
     }
 
     // Save the order status change

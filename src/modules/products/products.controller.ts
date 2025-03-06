@@ -1,3 +1,4 @@
+import { UsersService } from './../users/users.service';
 import {
   Controller,
   Get,
@@ -9,12 +10,14 @@ import {
   HttpStatus,
   Query,
   Patch,
+  Req,
+  HttpException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthAdmin } from 'src/common/decorators/http.decorators';
+import { AuthAdmin, AuthUser } from 'src/common/decorators/http.decorators';
 import { ResponseData } from 'src/common/global/globalClass';
 import { HttpMessage } from 'src/common/global/globalEnum';
 import { Product } from './entities/product.entity';
@@ -22,6 +25,7 @@ import { FilterProductDto } from './dto/filter-product.dto';
 import { CreateProductFlashSaleDto } from './dto/create-product-flash-sale.dto';
 import { UpdateProductWarehouse } from './dto/update-product-warehouse.dto';
 import { FilterPaginationDto } from './dto/filter-pagination';
+import { LogViewDto } from '../users/dto/log-view.dto';
 
 @ApiTags('Admin - Product')
 @Controller('api/admin/products')
@@ -41,7 +45,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -59,13 +63,13 @@ export class ProductsController {
       return new ResponseData<Product[]>(
         products,
         HttpStatus.OK,
-        'Successfully retrieved users.',
+        'Successfully retrieved products.',
         totalElements,
         totalPages,
         size,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -76,7 +80,7 @@ export class ProductsController {
       const product = await this.productsService.findOne(+id);
       return new ResponseData(product, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -97,7 +101,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -118,7 +122,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -139,7 +143,7 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -156,21 +160,28 @@ export class ProductsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
   @AuthAdmin()
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+    try {
+      return this.productsService.remove(+id);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
 }
 
 @ApiTags('Public - Product')
 @Controller('api/public/products')
 export class ProductsPublicController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get()
   async findAllPublic(
@@ -191,7 +202,7 @@ export class ProductsPublicController {
         size,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -216,7 +227,7 @@ export class ProductsPublicController {
         size,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -241,7 +252,7 @@ export class ProductsPublicController {
         size,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -256,7 +267,7 @@ export class ProductsPublicController {
         'Successfully retrieved products.',
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -266,7 +277,40 @@ export class ProductsPublicController {
       const product = await this.productsService.findOne(+id);
       return new ResponseData(product, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @AuthUser()
+  @Post('/view')
+  async logProductView(
+    @Body() logViewDto: LogViewDto,
+    @Req() req: any,
+  ): Promise<ResponseData<any>> {
+    try {
+      const user = req.user;
+
+      if (!user) {
+        return new ResponseData<any>(
+          null,
+          HttpStatus.UNAUTHORIZED,
+          'User not authenticated',
+        );
+      }
+
+      await this.usersService.logView(logViewDto, user);
+
+      return new ResponseData<any>(
+        null,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData<any>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        error.message || 'An error occurred',
+      );
     }
   }
 }

@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Query,
   Put,
+  HttpException,
 } from '@nestjs/common';
 import { MenusService } from './menus.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
@@ -39,11 +40,7 @@ export class MenusController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<Menu>(
-        null,
-        HttpStatus.BAD_REQUEST,
-        error.message,
-      );
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -82,11 +79,7 @@ export class MenusController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<Menu>(
-        null,
-        HttpStatus.BAD_REQUEST,
-        error.message,
-      );
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -104,11 +97,7 @@ export class MenusController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<Menu>(
-        null,
-        HttpStatus.BAD_REQUEST,
-        error.message,
-      );
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -157,11 +146,7 @@ export class MenuPublicController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-      return new ResponseData<Menu>(
-        null,
-        HttpStatus.BAD_REQUEST,
-        error.message,
-      );
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 }

@@ -13,6 +13,7 @@ import { Keyword } from 'src/modules/keywords/entities/keyword.entity';
 import { productWarehouse } from './product-warehouse.entity';
 import { ReviewsProduct } from 'src/modules/reviews-product/entities/reviews-product.entity';
 import { StatusProduct } from 'src/common/enums/product-status.enum';
+import { UserViewHistory } from 'src/modules/users/entities/user-view-history';
 
 @Entity()
 export class Product {
@@ -25,7 +26,7 @@ export class Product {
   @Column()
   code: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   description?: string;
 
   @Column()
@@ -99,4 +100,7 @@ export class Product {
     title: string;
     description: string;
   };
+
+  @OneToMany(() => UserViewHistory, (viewHistory) => viewHistory.product)
+  viewHistory: UserViewHistory[];
 }

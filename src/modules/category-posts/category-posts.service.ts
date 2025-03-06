@@ -129,9 +129,8 @@ export class CategoryPostsService {
   ): Promise<CategoryPost> {
     const category = await this.findOne(id);
 
-    if (updateCategoryPostDto.name) {
-      category.name = updateCategoryPostDto.name;
-    }
+    // Cập nhật các trường cơ bản
+    Object.assign(category, updateCategoryPostDto);
 
     if (updateCategoryPostDto.parentIds) {
       let parentCategories: CategoryPost[] = [];
@@ -143,10 +142,6 @@ export class CategoryPostsService {
       }
 
       category.parents = parentCategories;
-    }
-
-    if (updateCategoryPostDto.seo) {
-      category.seo = updateCategoryPostDto.seo;
     }
 
     return this.categoryPostRepository.save(category);

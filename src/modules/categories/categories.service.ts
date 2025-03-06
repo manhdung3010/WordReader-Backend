@@ -125,9 +125,7 @@ export class CategoriesService {
   ): Promise<Categories> {
     const category = await this.findOne(id);
 
-    if (updateCategoryDto.name) {
-      category.name = updateCategoryDto.name;
-    }
+    Object.assign(category, updateCategoryDto);
 
     if (updateCategoryDto.parentIds) {
       let parentCategories: Categories[] = [];
@@ -139,10 +137,6 @@ export class CategoriesService {
       }
 
       category.parents = parentCategories;
-    }
-
-    if (updateCategoryDto.seo) {
-      category.seo = updateCategoryDto.seo;
     }
 
     return this.categoriesRepository.save(category);

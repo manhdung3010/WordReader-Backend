@@ -14,14 +14,16 @@ import { Product } from 'src/modules/products/entities/product.entity';
 
 interface OrderItem {
   quantity: number;
-  product: Product
+  product: Product;
 }
-
 
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ type: 'varchar', default: '' })
+  orderCode: string;
 
   @ManyToOne(() => Users, (user) => user.orders)
   user: Users;

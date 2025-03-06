@@ -7,6 +7,8 @@ import {
   Param,
   Res,
   Delete,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { FilesService } from './files.service';
 import {
@@ -43,14 +45,22 @@ export class FilesController {
   async uploadMultipleFiles(
     @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
-    return this.filesService.saveMultipleFiles(files);
+    try {
+      return this.filesService.saveMultipleFiles(files);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Get(':filename')
   @ApiOperation({ summary: 'View a file' })
   async getFile(@Param('filename') filename: string, @Res() res: Response) {
-    const fileUrl = await this.filesService.getFile(filename);
-    res.redirect(fileUrl); // Redirect to the Cloudinary URL
+    try {
+      const fileUrl = await this.filesService.getFile(filename);
+      res.redirect(fileUrl); // Redirect to the Cloudinary URL
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
 
   @AuthAdmin()
@@ -58,6 +68,10 @@ export class FilesController {
   @ApiOperation({ summary: 'Delete a file' })
   @ApiParam({ name: 'filename', description: 'Name of the file to delete' })
   async deleteFile(@Param('filename') filename: string) {
-    return this.filesService.deleteFile(filename);
+    try {
+      return this.filesService.deleteFile(filename);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
 }

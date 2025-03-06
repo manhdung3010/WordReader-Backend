@@ -26,15 +26,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() authPayload: AuthPayloadDto) {
-    const { accessToken, user } = await this.authService.logIn(
-      authPayload.identifier,
-      authPayload.password,
-    );
-    return new ResponseData<any>(
-      { accessToken, ...user },
-      HttpStatus.OK,
-      HttpMessage.SUCCESS,
-    );
+    try {
+      const { accessToken, user } = await this.authService.logIn(
+        authPayload.identifier,
+        authPayload.password,
+      );
+      return new ResponseData<any>(
+        { accessToken, ...user },
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+    }
   }
 
   @Post('register')

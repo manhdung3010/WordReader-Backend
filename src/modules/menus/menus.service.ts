@@ -151,6 +151,6 @@ export class MenusService {
   async remove(id: number): Promise<{ message: string }> {
     const category = await this.findOne(id);
     await this.menuRepository.remove(category);
-    return { message: `Category with ID ${id} has been successfully removed` };
+    return { message: `Menu with ID ${id} has been successfully removed` };
   }
 }
