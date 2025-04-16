@@ -6,8 +6,9 @@ import { FindManyOptions, Repository } from 'typeorm';
 import { Posts } from './entities/post.entity';
 import { CategoryPost } from '../category-posts/entities/category-post.entity';
 import { KeywordPost } from '../keyword-post/entities/keyword-post.entity';
-import { FilterPostDto } from './dto/filter-post.dto';
+import { FilterPostDto, PostSortOption } from './dto/filter-post.dto';
 import { FilterPaginationDto } from './dto/filter-pagination';
+import { Users } from '../users/entities/users.entity';
 
 @Injectable()
 export class PostsService {
@@ -20,10 +21,24 @@ export class PostsService {
 
     @InjectRepository(KeywordPost)
     private readonly keywordPostRepository: Repository<KeywordPost>,
+
+    @InjectRepository(Users)
+    private readonly UserRepository: Repository<Users>,
   ) {}
 
   async create(createPostDto: CreatePostDto, user: any): Promise<Posts> {
     const { keywords, categories, ...postData } = createPostDto;
+
+    const userDetail = await this.UserRepository.findOne({
+      where: { id: user.userId },
+    });
+
+    const existingPost = await this.findOneByUrl(
+      createPostDto.url,
+    );
+    if (existingPost) {
+      throw new Error('Url post already exists');
+    }
 
     // Create a new post instance
     const newPost = new Posts();
@@ -37,7 +52,8 @@ export class PostsService {
     newPost.seo = postData.seo;
     newPost.createdAt = new Date();
     newPost.updatedAt = null;
-    newPost.author = user.fullName; // Replace with logic to get author from token
+    newPost.author = user.fullName;
+    newPost.authorImage = userDetail.avatar;
 
     // If categories are provided, fetch and associate them with the new post
     if (categories && categories.length > 0) {
@@ -63,12 +79,13 @@ export class PostsService {
     const pageSize = filter.pageSize || 20;
     const skip = (page - 1) * pageSize;
 
-    const whereClause = this.buildWhereClause(filter);
+    const { where, order } = this.buildWhereClause(filter);
 
     const options: FindManyOptions<Posts> = {
       relations: ['categories', 'keywords'],
-      where: whereClause,
-      skip: skip,
+      where,
+      order, // Add order here
+      skip,
       take: pageSize,
     };
 
@@ -77,13 +94,16 @@ export class PostsService {
         await this.postRepository.findAndCount(options);
       return [posts, totalElements];
     } catch (error) {
-      // Handle error appropriately
       throw new Error(`Failed to fetch posts: ${error.message}`);
     }
   }
 
-  private buildWhereClause(filter: Partial<FilterPostDto>): any {
+  private buildWhereClause(filter: Partial<FilterPostDto>): {
+    where: any;
+    order: { [key: string]: 'ASC' | 'DESC' };
+  } {
     const where: any = {};
+    const order: { [key: string]: 'ASC' | 'DESC' } = {};
 
     if (filter.name) {
       where.name = filter.name;
@@ -95,6 +115,14 @@ export class PostsService {
 
     if (filter.author) {
       where.author = filter.author;
+    }
+
+    if (filter.sortBy) {
+      if (filter.sortBy === PostSortOption.LATEST) {
+        order['createdAt'] = 'DESC';
+      } else if (filter.sortBy === PostSortOption.POPULAR) {
+        order['view'] = 'DESC';
+      }
     }
 
     if (typeof filter.display === 'boolean') {
@@ -109,7 +137,7 @@ export class PostsService {
       where.homeDisplay = filter.homeDisplay === 'true';
     }
 
-    return where;
+    return { where, order };
   }
 
   async findOne(id: number): Promise<Posts> {
@@ -121,6 +149,21 @@ export class PostsService {
       throw new Error(`Product with ID ${id} not found`);
     }
     return post;
+  }
+
+  async findOneByUrl(url: string): Promise<Posts> {
+    const post = await this.postRepository.findOne({
+      where: { url },
+      relations: ['categories', 'keywords'],
+    });
+    if (!post) {
+      throw new Error(`Product with url ${url} not found`);
+    }
+    return post;
+  }
+
+  async increaseViewCount(postId: number) {
+    await this.postRepository.increment({ id: postId }, 'view', 1);
   }
 
   async findByKeyword(
@@ -160,18 +203,16 @@ export class PostsService {
       const page = filter.page || 1;
       const pageSize = filter.pageSize || 20;
       const skip = (page - 1) * pageSize;
-  
+
       // Tìm category theo categoryUrl
       const category = await this.categoryPostRepository.findOne({
         where: { url: categoryUrl },
       });
-  
+
       if (!category) {
-        throw new Error(
-          `Category with URL ${categoryUrl} not found`,
-        );
+        throw new Error(`Category with URL ${categoryUrl} not found`);
       }
-  
+
       // Tìm các bài viết liên quan đến category
       const [posts, totalElements] = await this.postRepository
         .createQueryBuilder('posts')
@@ -180,7 +221,7 @@ export class PostsService {
         .skip(skip)
         .take(pageSize)
         .getManyAndCount();
-  
+
       return [posts, totalElements];
     } catch (error) {
       throw new Error(`Failed to find posts by category: ${error.message}`);

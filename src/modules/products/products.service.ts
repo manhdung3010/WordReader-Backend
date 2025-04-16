@@ -4,7 +4,6 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import {
-  FindManyOptions,
   In,
   LessThanOrEqual,
   MoreThan,
@@ -277,27 +276,35 @@ export class ProductsService {
 
     const whereClause = this.buildWhereClause(filter);
 
-    const options: FindManyOptions<Product> = {
-      relations: ['categories', 'information', 'keywords', 'productWarehouse'],
-      where: whereClause,
-      skip: skip,
-      take: pageSize,
-    };
+    const qb = this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.categories', 'category')
+      .leftJoinAndSelect('product.information', 'information')
+      .leftJoinAndSelect('product.keywords', 'keywords')
+      .leftJoinAndSelect('product.productWarehouse', 'productWarehouse');
 
-    try {
-      const [products, totalElements] =
-        await this.productRepository.findAndCount(options);
+    // Áp dụng whereClause đã được build sẵn
+    Object.entries(whereClause).forEach(([key, value]) => {
+      qb.andWhere(`product.${key} = :${key}`, { [key]: value });
+    });
 
-      for (const product of products) {
-        const avgRating = await this.calculateAverageRating(product.id);
-        product.averageStarRating = avgRating;
-      }
-
-      return [products, totalElements];
-    } catch (error) {
-      // Handle error appropriately
-      throw new Error(`Failed to fetch products: ${error.message}`);
+    // Filter categories nếu có
+    if (filter.categories && filter.categories.length > 0) {
+      qb.andWhere('category.id IN (:...categoryIds)', {
+        categoryIds: filter.categories,
+      });
     }
+
+    qb.skip(skip).take(pageSize);
+
+    const [products, totalElements] = await qb.getManyAndCount();
+
+    for (const product of products) {
+      const avgRating = await this.calculateAverageRating(product.id);
+      product.averageStarRating = avgRating;
+    }
+
+    return [products, totalElements];
   }
 
   async findByIds(ids: number[]): Promise<Product[]> {
@@ -352,7 +359,7 @@ export class ProductsService {
     }
 
     if (filter.isDiscount === true) {
-      where.discount = MoreThan(0);
+      where.perDiscount = MoreThan(0);
     }
 
     return where;
@@ -449,6 +456,22 @@ export class ProductsService {
     if (!product) {
       throw new Error(`Product with ID ${id} not found`);
     }
+    return product;
+  }
+
+  async findOneByUrl(url: string): Promise<Product> {
+    const product = await this.productRepository.findOne({
+      where: { url },
+      relations: ['categories', 'information', 'keywords', 'productWarehouse'],
+    });
+
+    if (!product) {
+      throw new Error(`Product with url ${url} not found`);
+    }
+
+    const avgRating = await this.calculateAverageRating(product.id);
+    product.averageStarRating = avgRating;
+
     return product;
   }
 

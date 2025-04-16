@@ -7,6 +7,8 @@ import {
   Req,
   UseGuards,
   Get,
+  Res,
+  HttpException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthPayloadDto } from './dto/auth.dto';
@@ -82,18 +84,28 @@ export class AuthController {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async googleLogin(@Req() req) {}
 
-  @Get('/google/callback')
-  @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req) {
+  @Get('google/callback')
+  async googleCallback(@Req() req: any, @Res() res: any) {
     try {
-      const data = await this.authService.googleLogin(req.user);
-      return new ResponseData<any>(
-        data,
-        HttpStatus.CREATED,
-        HttpMessage.SUCCESS,
+      const profile = req.user; // Lấy thông tin user từ Google (passport middleware)
+      if (!profile) {
+        throw new HttpException('No user from Google', HttpStatus.BAD_REQUEST);
+      }
+
+      const { accessToken, user } = await this.authService.googleLogin(profile);
+
+      // Chuyển hướng về FE với query params
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const encodedUser = encodeURIComponent(JSON.stringify(user));
+
+      return res.redirect(
+        `${frontendUrl}/login?accessToken=${accessToken}&user=${encodedUser}`,
       );
     } catch (error) {
-      return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(
+        `${frontendUrl}/login?error=${encodeURIComponent(error.message)}`,
+      );
     }
   }
 }

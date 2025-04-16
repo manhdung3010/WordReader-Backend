@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthMessage } from 'src/common/constants/auth-message.enum';
@@ -47,27 +47,29 @@ export class AuthService {
 
   async googleLogin(profile: any): Promise<{ accessToken: string; user: any }> {
     if (!profile) {
-      throw new Error('No user from Google');
+      throw new HttpException('No user from Google', HttpStatus.BAD_REQUEST);
     }
 
-    // Check if user exists in the database
     let user = await this.usersService.findOneByGoogleId(profile.googleId);
 
     if (!user) {
-      // Nếu người dùng không tồn tại, kiểm tra email để tránh xung đột
-      const existingUser = await this.usersService.findOneByEmail(
-        profile.email,
-      );
-      if (existingUser) {
-        throw new Error('Email is already associated with another account');
-      }
+      user = await this.usersService.findOneByEmail(profile.email);
 
-      user = new Users();
-      user.email = profile.email;
-      user.fullName = profile.displayName;
-      user.avatar = profile.photo;
-      user.username = profile.username || profile.email.split('@')[0];
-      user = await this.userRepository.save(user);
+      if (user) {
+        user.googleId = profile.googleId;
+        await this.userRepository.save(user);
+      } else {
+        user = new Users();
+        user.email = profile.email;
+        user.fullName = profile.displayName;
+        user.avatar = profile.photo;
+        user.googleId = profile.googleId;
+
+        const baseUsername = profile.username || profile.email.split('@')[0];
+        user.username = await this.generateUniqueUsername(baseUsername);
+
+        user = await this.userRepository.save(user);
+      }
     }
 
     const payload = {
@@ -77,9 +79,23 @@ export class AuthService {
       role: user.role,
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
 
     return { accessToken, user };
+  }
+
+  private async generateUniqueUsername(baseUsername: string): Promise<string> {
+    let username = baseUsername;
+    let counter = 1;
+
+    while (await this.usersService.findOneByUsernameOrEmail(username)) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    return username;
   }
 
   async register(authPayload: RegisterDto): Promise<Users> {

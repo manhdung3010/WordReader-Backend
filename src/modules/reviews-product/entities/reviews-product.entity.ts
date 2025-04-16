@@ -1,12 +1,18 @@
 import { Product } from 'src/modules/products/entities/product.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class ReviewsProduct {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Product, product => product.reviews)
+  @ManyToOne(() => Product, (product) => product.reviews)
   product: Product;
 
   @Column()
@@ -26,4 +32,13 @@ export class ReviewsProduct {
 
   @Column({ type: 'json', nullable: true })
   image: string[];
+
+  @Column()
+  author: string;
+
+  @Column()
+  authorImage: string;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
 }

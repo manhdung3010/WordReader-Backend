@@ -124,22 +124,24 @@ export class CategoryProductPublicController {
     @Query() filter: FilterCategoryDto,
   ): Promise<ResponseData<Categories[]>> {
     try {
-      const [categories, totalElements] =
-        await this.categoriesService.findAll(filter);
-      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
-      const size = categories.length;
+      const categories = await this.categoriesService.findAllRelation({
+        display: true,
+        ...filter,
+      });
 
       return new ResponseData<Categories[]>(
         categories,
         HttpStatus.OK,
         'Successfully retrieved categories.',
-        totalElements,
-        totalPages,
-        size,
+        categories.length, // Tổng số danh mục sau khi lọc
+        1, // Chỉ có một trang duy nhất vì bỏ phân trang
+        categories.length, // Kích thước danh sách
       );
     } catch (error) {
+      console.error('Error retrieving categories:', error);
+
       return new ResponseData<Categories[]>(
-        null,
+        [],
         HttpStatus.INTERNAL_SERVER_ERROR,
         'Failed to retrieve categories.',
       );

@@ -23,6 +23,9 @@ export class FilterProductDto {
   @ApiPropertyOptional({ type: Boolean })
   display?: boolean;
 
+  @ApiPropertyOptional({ type: [String], isArray: true })
+  categories?: string[];
+
   @ApiPropertyOptional()
   page?: number;
 

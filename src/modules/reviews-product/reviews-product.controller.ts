@@ -7,6 +7,8 @@ import {
   Delete,
   Put,
   HttpStatus,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { ReviewsProductService } from './reviews-product.service';
 import { CreateReviewsProductDto } from './dto/create-reviews-product.dto';
@@ -14,7 +16,7 @@ import { UpdateReviewsProductDto } from './dto/update-reviews-product.dto';
 import { ResponseData } from 'src/common/global/globalClass';
 import { HttpMessage } from 'src/common/global/globalEnum';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthAdmin } from 'src/common/decorators/http.decorators';
+import { AuthAdmin, AuthUser } from 'src/common/decorators/http.decorators';
 
 @ApiTags('Admin - Review Product')
 @Controller('api/admin/reviews-product')
@@ -23,10 +25,21 @@ export class ReviewsProductController {
 
   @AuthAdmin()
   @Post()
-  async create(@Body() createReviewsProductDto: CreateReviewsProductDto) {
+  async create(
+    @Body() createReviewsProductDto: CreateReviewsProductDto,
+    @Req() req: any,
+  ) {
     try {
-      const createdReview = await this.reviewsProductService.create(createReviewsProductDto);
-      return new ResponseData(createdReview, HttpStatus.OK, HttpMessage.SUCCESS);
+      const user = req.user;
+      const createdReview = await this.reviewsProductService.create(
+        createReviewsProductDto,
+        user,
+      );
+      return new ResponseData(
+        createdReview,
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
     } catch (error) {
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
@@ -45,10 +58,18 @@ export class ReviewsProductController {
 
   @AuthAdmin()
   @Get('/findByProductId/:idProduct')
-  async findByProductId(@Param('idProduct') idProduct: string) {
+  async findByProductId(
+    @Param('idProduct') idProduct: string,
+    @Query('page') page = '1',
+    @Query('pageSize') pageSize = '10',
+  ) {
     try {
-      const reviews = await this.reviewsProductService.findByProductId(+idProduct);
-      return new ResponseData(reviews, HttpStatus.OK, HttpMessage.SUCCESS);
+      const result = await this.reviewsProductService.findByProductId(
+        +idProduct,
+        +page,
+        +pageSize,
+      );
+      return new ResponseData(result, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
@@ -67,10 +88,20 @@ export class ReviewsProductController {
 
   @AuthAdmin()
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateReviewsProductDto: UpdateReviewsProductDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateReviewsProductDto: UpdateReviewsProductDto,
+  ) {
     try {
-      const updatedReview = await this.reviewsProductService.update(+id, updateReviewsProductDto);
-      return new ResponseData(updatedReview, HttpStatus.OK, HttpMessage.SUCCESS);
+      const updatedReview = await this.reviewsProductService.update(
+        +id,
+        updateReviewsProductDto,
+      );
+      return new ResponseData(
+        updatedReview,
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
     } catch (error) {
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
@@ -93,6 +124,29 @@ export class ReviewsProductController {
 export class PublicReviewsProductController {
   constructor(private readonly reviewsProductService: ReviewsProductService) {}
 
+  @AuthUser()
+  @Post()
+  async create(
+    @Body() createReviewsProductDto: CreateReviewsProductDto,
+    @Req() req: any,
+  ) {
+    try {
+      const user = req.user;
+
+      const createdReview = await this.reviewsProductService.create(
+        createReviewsProductDto,
+        user,
+      );
+      return new ResponseData(
+        createdReview,
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
+    }
+  }
+
   @Get()
   async findAll() {
     try {
@@ -104,10 +158,18 @@ export class PublicReviewsProductController {
   }
 
   @Get('/findByProductId/:idProduct')
-  async findByProductId(@Param('idProduct') idProduct: string) {
+  async findByProductId(
+    @Param('idProduct') idProduct: string,
+    @Query('page') page = '1',
+    @Query('pageSize') pageSize = '10',
+  ) {
     try {
-      const reviews = await this.reviewsProductService.findByProductId(+idProduct);
-      return new ResponseData(reviews, HttpStatus.OK, HttpMessage.SUCCESS);
+      const result = await this.reviewsProductService.findByProductId(
+        +idProduct,
+        +page,
+        +pageSize,
+      );
+      return new ResponseData(result, HttpStatus.OK, HttpMessage.SUCCESS);
     } catch (error) {
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }

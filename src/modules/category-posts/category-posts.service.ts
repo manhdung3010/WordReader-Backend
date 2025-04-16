@@ -74,6 +74,17 @@ export class CategoryPostsService {
     return category;
   }
 
+  async findOneByUrl(url: string): Promise<CategoryPost> {
+    const category = await this.categoryPostRepository.findOne({
+      where: { url },
+      relations: ['parents', 'children'],
+    });
+    if (!category) {
+      throw new Error(`Category with url ${url} not found`);
+    }
+    return category;
+  }
+
   async create(
     createCategoryPostDto: CreateCategoryPostDto,
   ): Promise<CategoryPost> {

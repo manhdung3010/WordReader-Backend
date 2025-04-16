@@ -175,4 +175,25 @@ export class CategoryPostPublicController {
       );
     }
   }
+
+  @Get('findByUrl/:url')
+  async findOneByUrl(
+    @Param('url') url: string,
+  ): Promise<ResponseData<CategoryPost>> {
+    try {
+      const category: CategoryPost =
+        await this.categoryPostsService.findOneByUrl(url);
+      return new ResponseData<CategoryPost>(
+        category,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData<CategoryPost>(
+        null,
+        HttpStatus.BAD_REQUEST,
+        error.message,
+      );
+    }
+  }
 }

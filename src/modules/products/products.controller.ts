@@ -281,6 +281,18 @@ export class ProductsPublicController {
     }
   }
 
+  @Get('findByUrl/:url')
+  async findByUrlPublic(
+    @Param('url') url: string,
+  ): Promise<ResponseData<Product>> {
+    try {
+      const product = await this.productsService.findOneByUrl(url);
+      return new ResponseData(product, HttpStatus.OK, HttpMessage.SUCCESS);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   @AuthUser()
   @Post('/view')
   async logProductView(

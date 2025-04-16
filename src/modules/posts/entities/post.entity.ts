@@ -39,12 +39,18 @@ export class Posts {
   @Column()
   author: string;
 
+  @Column()
+  authorImage: string;
+
+  @Column({ type: 'int', default: 0 })
+  view: number;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp', nullable: true })
   updatedAt: Date;
-  
+
   @ManyToMany(() => KeywordPost)
   @JoinTable({
     name: 'post_keywords',

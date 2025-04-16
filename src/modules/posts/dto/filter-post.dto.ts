@@ -1,4 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional } from 'class-validator';
+
+export enum PostSortOption {
+  LATEST = 'latest',
+  POPULAR = 'popular',
+}
 
 export class FilterPostDto {
   @ApiPropertyOptional()
@@ -15,6 +21,11 @@ export class FilterPostDto {
 
   @ApiPropertyOptional({ type: Boolean })
   display?: boolean;
+
+  @ApiPropertyOptional({ enum: PostSortOption, description: 'Sort by latest or most popular posts' })
+  @IsOptional()
+  @IsEnum(PostSortOption)
+  sortBy?: PostSortOption;
 
   @ApiPropertyOptional()
   page?: number;

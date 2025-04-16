@@ -41,6 +41,7 @@ export class CreateCategoryDto {
     example: {
       title: 'string',
       description: 'string',
+      keywords: 'sách khoa học, vật lý, sinh học',
     },
     required: false,
   })

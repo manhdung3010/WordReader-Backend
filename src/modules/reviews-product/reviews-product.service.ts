@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable } from '@nestjs/common';
 import { CreateReviewsProductDto } from './dto/create-reviews-product.dto';
 import { UpdateReviewsProductDto } from './dto/update-reviews-product.dto';
@@ -18,12 +19,17 @@ export class ReviewsProductService {
 
   async create(
     createReviewsProductDto: CreateReviewsProductDto,
+    user: any,
   ): Promise<ReviewsProduct> {
     const newReviewsProduct = this.reviewsProductRepository.create(
       createReviewsProductDto,
     );
     const { productId, ...rest } = createReviewsProductDto;
     newReviewsProduct.product = { id: productId } as any;
+
+    newReviewsProduct.author = user.fullName;
+    newReviewsProduct.authorImage = user.avatar;
+
     return await this.reviewsProductRepository.save(newReviewsProduct);
   }
 
@@ -31,7 +37,11 @@ export class ReviewsProductService {
     return await this.reviewsProductRepository.find({ relations: ['product'] });
   }
 
-  async findByProductId(productId: number): Promise<ReviewsProduct[]> {
+  async findByProductId(
+    productId: number,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ data: ReviewsProduct[]; total: number }> {
     const product = await this.productRepository.findOne({
       where: { id: productId },
     });
@@ -40,10 +50,14 @@ export class ReviewsProductService {
       throw new Error(`Product with ID ${productId} not found`);
     }
 
-    return await this.reviewsProductRepository.find({
+    const [data, total] = await this.reviewsProductRepository.findAndCount({
       where: { product: { id: productId } },
-      relations: ['product'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
+
+    return { data, total };
   }
 
   async findOne(id: number): Promise<ReviewsProduct> {

@@ -9,7 +9,6 @@ import {
   Query,
   Req,
   Put,
-
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -46,7 +45,6 @@ export class PostsController {
         HttpMessage.SUCCESS,
       );
     } catch (error) {
-
       return new ResponseData<Posts>(
         null,
         HttpStatus.BAD_REQUEST,
@@ -171,6 +169,38 @@ export class PostsPublicController {
     }
   }
 
+  @Get('findByUrl/:url')
+  async findOneByUrl(@Param('url') url: string): Promise<ResponseData<Posts>> {
+    try {
+      const post = await this.postsService.findOneByUrl(url);
+      return new ResponseData<Posts>(post, HttpStatus.OK, HttpMessage.SUCCESS);
+    } catch (error) {
+      return new ResponseData<Posts>(
+        null,
+        HttpStatus.NOT_FOUND,
+        'Post not found.',
+      );
+    }
+  }
+
+  @Post(':id/view')
+  async increaseView(@Param('id') id: string): Promise<ResponseData<string>> {
+    try {
+      await this.postsService.increaseViewCount(+id);
+      return new ResponseData<string>(
+        'View count updated',
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData<string>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to increase view count.',
+      );
+    }
+  }
+
   @Get('/findByKeyword/:keywordCode')
   async findByKeyword(
     @Param('keywordCode') keywordCode: string,
@@ -195,7 +225,6 @@ export class PostsPublicController {
         size,
       );
     } catch (error) {
-
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
@@ -224,7 +253,6 @@ export class PostsPublicController {
         size,
       );
     } catch (error) {
-  
       return new ResponseData(null, HttpStatus.BAD_REQUEST, HttpMessage.ERROR);
     }
   }
