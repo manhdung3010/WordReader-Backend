@@ -30,6 +30,7 @@ import { Discount } from './modules/discounts/entities/discount.entity';
 import { OrdersModule } from './modules/orders/orders.module';
 import { Order } from './modules/orders/entities/order.entity';
 import { UserViewHistory } from './modules/users/entities/user-view-history';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { UserViewHistory } from './modules/users/entities/user-view-history';
     MenusModule,
     DiscountsModule,
     OrdersModule,
+    AiModule,
   ],
 })
 export class AppModule {}

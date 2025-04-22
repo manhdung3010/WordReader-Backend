@@ -19,6 +19,7 @@ import { productWarehouse } from './entities/product-warehouse.entity';
 import { UpdateProductWarehouse } from './dto/update-product-warehouse.dto';
 import { FilterPaginationDto } from './dto/filter-pagination';
 import { ReviewsProduct } from '../reviews-product/entities/reviews-product.entity';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class ProductsService {
@@ -40,6 +41,8 @@ export class ProductsService {
 
     @InjectRepository(ReviewsProduct)
     private readonly reviewsProductRepository: Repository<ReviewsProduct>,
+
+    private readonly aiService: AiService,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
@@ -157,6 +160,13 @@ export class ProductsService {
         await this.infoProductRepository.save(infoProduct);
       }
     }
+
+    // Update AI recommendations with the new product
+    await this.aiService.updateRecomendations({
+      id: newProduct.id,
+      name: newProduct.name,
+      description: newProduct.description,
+    });
 
     return newProduct;
   }
@@ -288,6 +298,12 @@ export class ProductsService {
       qb.andWhere(`product.${key} = :${key}`, { [key]: value });
     });
 
+    if (filter.name) {
+      qb.andWhere('LOWER(product.name) LIKE LOWER(:name)', {
+        name: `%${filter.name}%`,
+      });
+    }
+
     // Filter categories nếu có
     if (filter.categories && filter.categories.length > 0) {
       qb.andWhere('category.id IN (:...categoryIds)', {
@@ -326,10 +342,6 @@ export class ProductsService {
 
   private buildWhereClause(filter: Partial<FilterProductDto>): any {
     const where: any = {};
-
-    if (filter.name) {
-      where.name = filter.name;
-    }
 
     if (filter.code) {
       where.code = filter.code;
@@ -551,13 +563,27 @@ export class ProductsService {
       }
     }
 
+    await this.aiService.updateProduct(id, {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+    });
+
     return this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.productRepository.delete(id);
-    if (result.affected === 0) {
-      throw new Error(`Product with ID ${id} not found`);
+    try {
+      const product = await this.findOne(id);
+      if (!product) {
+        throw new Error(`Product with ID ${id} not found`);
+      }
+
+      await this.aiService.deleteProduct(id);
+
+      await this.productRepository.delete(id);
+    } catch (error) {
+      throw new Error(`Failed to delete product: ${error.message}`);
     }
   }
 }

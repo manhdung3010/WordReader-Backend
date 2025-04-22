@@ -12,6 +12,7 @@ import { Keyword } from '../keywords/entities/keyword.entity';
 import { productWarehouse } from './entities/product-warehouse.entity';
 import { ReviewsProduct } from '../reviews-product/entities/reviews-product.entity';
 import { UsersModule } from '../users/users.module'; // Import UsersModule
+import { AiModule } from '../ai/ai.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { UsersModule } from '../users/users.module'; // Import UsersModule
       productWarehouse,
       ReviewsProduct,
     ]),
-    UsersModule, // ✅ Thêm UsersModule để có thể dùng UsersService
+    UsersModule, 
+    AiModule,
   ],
   controllers: [ProductsController, ProductsPublicController],
   providers: [ProductsService],
