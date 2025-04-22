@@ -28,8 +28,8 @@ export class Users extends BaseEntity {
   @Column({ nullable: true })
   password: string | null;
 
-  @Column()
-  avatar: string;
+  @Column({ nullable: true })
+  avatar?: string;
 
   @Column()
   fullName: string;

@@ -125,33 +125,49 @@ export class CategoriesService {
   ): Promise<Categories> {
     const category = await this.findOne(id);
 
-    // Áp dụng các cập nhật khác
-    Object.assign(category, updateCategoryDto);
+    // Áp dụng các cập nhật khác (trừ phần parents)
+    const { parentIds, ...otherUpdates } = updateCategoryDto;
+    Object.assign(category, otherUpdates);
 
-    if (updateCategoryDto.parentIds) {
+    // Xử lý quan hệ parents nếu được cung cấp
+    if (parentIds !== undefined) {
+      // Khởi tạo mảng parents rỗng
       let parentCategories: Categories[] = [];
 
-      if (updateCategoryDto.parentIds.length > 0) {
-        parentCategories = await this.categoriesRepository.findByIds(
-          updateCategoryDto.parentIds,
-        );
-      }
+      // Chỉ tìm kiếm khi có parentIds được cung cấp
+      if (parentIds && parentIds.length > 0) {
+        parentCategories = await this.categoriesRepository.findByIds(parentIds);
 
-      // Kiểm tra xem danh mục có tự làm cha của chính nó không
-      for (const parent of parentCategories) {
-        if (parent.id === id) {
-          throw new Error(`Category cannot be a parent of itself.`);
+        // Kiểm tra nếu không tìm thấy đủ số lượng parents
+        if (parentCategories.length !== parentIds.length) {
+          throw new Error('One or more parent categories not found');
         }
 
-        // Kiểm tra vòng lặp phân cấp (danh mục không thể là con của con nó)
-        if (await this.isDescendant(parent.id, id)) {
-          throw new Error(`Category cannot be a descendant of itself.`);
+        // Kiểm tra các ràng buộc về cấu trúc phân cấp
+        for (const parent of parentCategories) {
+          // Kiểm tra xem danh mục có tự làm cha của chính nó không
+          if (parent.id === id) {
+            throw new Error('Category cannot be a parent of itself');
+          }
+
+          // Kiểm tra vòng lặp phân cấp chỉ khi parent ID thực sự thay đổi
+          // So sánh với danh sách parents hiện tại để tránh kiểm tra không cần thiết
+          const isExistingParent = category.parents?.some(
+            (existingParent) => existingParent.id === parent.id,
+          );
+          if (!isExistingParent && (await this.isDescendant(parent.id, id))) {
+            throw new Error(
+              'Circular hierarchy detected: category cannot be a descendant of itself',
+            );
+          }
         }
       }
 
+      // Gán danh sách parents mới cho category
       category.parents = parentCategories;
     }
 
+    // Lưu và trả về category đã cập nhật
     return this.categoriesRepository.save(category);
   }
   private async isDescendant(

@@ -8,7 +8,7 @@ export class Author {
   @Column()
   name: string;
 
-  @Column('date')
+  @Column('date', { nullable: true })
   date: Date;
 
   @Column()
@@ -17,6 +17,6 @@ export class Author {
   @Column({ type: 'text', nullable: true })
   biography: string;
 
-  @Column()
+  @Column({ nullable: true })
   image: string;
 }
