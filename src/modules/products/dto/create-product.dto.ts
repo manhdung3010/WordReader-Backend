@@ -40,6 +40,12 @@ export class CreateProductDto {
   avatar: string;
 
   @ApiProperty({
+    example: false,
+    description: 'Product chosen by our experts',
+  })
+  chosenByExperts: boolean;
+
+  @ApiProperty({
     example: 0,
   })
   price: number;

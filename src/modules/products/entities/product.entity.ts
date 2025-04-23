@@ -47,6 +47,9 @@ export class Product {
   @Column({ default: 0 })
   averageStarRating: number;
 
+  @Column({ default: false })
+  chosenByExperts: boolean;
+
   @Column()
   price: number;
 

@@ -12,11 +12,12 @@ import {
   Patch,
   Req,
   HttpException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { AuthAdmin, AuthUser } from 'src/common/decorators/http.decorators';
 import { ResponseData } from 'src/common/global/globalClass';
 import { HttpMessage } from 'src/common/global/globalEnum';
@@ -291,6 +292,17 @@ export class ProductsPublicController {
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Get('random-chosen-by-experts/:size')
+  @ApiOperation({ summary: 'Get random products chosen by experts' })
+  @ApiParam({ name: 'size', description: 'Number of products to return' })
+  async findRandomChosenByExperts(@Param('size', ParseIntPipe) size: number) {
+    const products = await this.productsService.findRandomChosenByExperts(size);
+    return {
+      data: products,
+      total: products.length,
+    };
   }
 
   @AuthUser()

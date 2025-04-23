@@ -54,6 +54,7 @@ export class ProductsService {
       display,
       status,
       avatar,
+      chosenByExperts,
       price,
       perDiscount,
       image,
@@ -106,6 +107,7 @@ export class ProductsService {
       display,
       status,
       avatar,
+      chosenByExperts,
       price,
       discountPrice,
       perDiscount,
@@ -585,5 +587,26 @@ export class ProductsService {
     } catch (error) {
       throw new Error(`Failed to delete product: ${error.message}`);
     }
+  }
+
+  async findRandomChosenByExperts(size: number): Promise<Product[]> {
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.categories', 'categories')
+      .leftJoinAndSelect('product.information', 'information')
+      .leftJoinAndSelect('product.keywords', 'keywords')
+      .leftJoinAndSelect('product.productWarehouse', 'productWarehouse')
+      .where('product.chosenByExperts = :chosen', { chosen: true })
+      .orderBy('RAND()') // Changed from RANDOM() to RAND() for MySQL
+      .take(size)
+      .getMany();
+
+    // Calculate average rating for each product
+    for (const product of products) {
+      const avgRating = await this.calculateAverageRating(product.id);
+      product.averageStarRating = avgRating;
+    }
+
+    return products;
   }
 }
