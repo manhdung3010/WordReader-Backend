@@ -3,13 +3,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import {
-  In,
-  LessThanOrEqual,
-  MoreThan,
-  MoreThanOrEqual,
-  Repository,
-} from 'typeorm';
+import { In, MoreThan, Repository } from 'typeorm';
 import { Categories } from '../categories/entities/category.entity';
 import { InfoProduct } from './entities/info-product.entity';
 import { FilterProductDto } from './dto/filter-product.dto';
@@ -306,6 +300,13 @@ export class ProductsService {
       });
     }
 
+    if (filter.priceMin !== undefined) {
+      qb.andWhere('product.price >= :priceMin', { priceMin: filter.priceMin });
+    }
+    if (filter.priceMax !== undefined) {
+      qb.andWhere('product.price <= :priceMax', { priceMax: filter.priceMax });
+    }
+
     // Filter categories nếu có
     if (filter.categories && filter.categories.length > 0) {
       qb.andWhere('category.id IN (:...categoryIds)', {
@@ -351,14 +352,6 @@ export class ProductsService {
 
     if (filter.status) {
       where.status = filter.status;
-    }
-
-    if (filter.priceMin !== undefined) {
-      where.price = MoreThanOrEqual(filter.priceMin);
-    }
-
-    if (filter.priceMax !== undefined) {
-      where.price = LessThanOrEqual(filter.priceMax);
     }
 
     // Convert display string value to boolean
@@ -437,7 +430,7 @@ export class ProductsService {
 
   async findByCategory(
     categoryUrl: string,
-    filter: FilterPaginationDto,
+    filter: FilterProductDto,
   ): Promise<[Product[], number]> {
     const page = filter.page || 1;
     const pageSize = filter.pageSize || 20;
@@ -451,13 +444,53 @@ export class ProductsService {
       throw new Error(`Category with URL ${categoryUrl} not found`);
     }
 
-    const [products, totalElements] = await this.productRepository
+    const whereClause = this.buildWhereClause(filter);
+
+    const qb = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.categories', 'categories')
-      .where('categories.id = :categoryId', { categoryId: category.id })
-      .skip(skip)
-      .take(pageSize)
-      .getManyAndCount();
+      .leftJoinAndSelect('product.information', 'information')
+      .leftJoinAndSelect('product.keywords', 'keywords')
+      .leftJoinAndSelect('product.productWarehouse', 'productWarehouse')
+      .where('categories.id = :categoryId', { categoryId: category.id });
+
+    // Áp dụng filter thêm từ whereClause
+    Object.entries(whereClause).forEach(([key, value]) => {
+      qb.andWhere(`product.${key} = :${key}`, { [key]: value });
+    });
+
+    // Filter theo tên
+    if (filter.name) {
+      qb.andWhere('LOWER(product.name) LIKE LOWER(:name)', {
+        name: `%${filter.name}%`,
+      });
+    }
+
+    if (filter.priceMin !== undefined) {
+      qb.andWhere('product.price >= :priceMin', { priceMin: filter.priceMin });
+    }
+    if (filter.priceMax !== undefined) {
+      qb.andWhere('product.price <= :priceMax', { priceMax: filter.priceMax });
+    }
+
+    // Filter thêm theo category phụ nếu có
+    if (filter.categories && filter.categories.length > 0) {
+      qb.andWhere('categories.id IN (:...categoryIds)', {
+        categoryIds: filter.categories,
+      });
+    }
+
+    qb.skip(skip).take(pageSize);
+
+    const [products, totalElements] = await qb.getManyAndCount();
+
+    // Tính average rating song song
+    const ratings = await Promise.all(
+      products.map((p) => this.calculateAverageRating(p.id)),
+    );
+    products.forEach((product, i) => {
+      product.averageStarRating = ratings[i];
+    });
 
     return [products, totalElements];
   }

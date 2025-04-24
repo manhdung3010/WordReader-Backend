@@ -235,7 +235,7 @@ export class ProductsPublicController {
   @Get('/findByCategory/:urlCategory')
   async findByCategory(
     @Param('urlCategory') urlCategory: string,
-    @Query() filter: FilterPaginationDto,
+    @Query() filter: FilterProductDto,
   ): Promise<ResponseData<Product[]>> {
     try {
       const [products, totalElements] =

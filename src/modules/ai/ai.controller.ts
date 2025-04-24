@@ -30,7 +30,7 @@ import {
 import { ResponseData } from 'src/common/global/globalClass';
 
 @ApiTags('AI Services')
-@Controller('ai')
+@Controller('api/ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
@@ -51,7 +51,7 @@ export class AiController {
   }
 
   @ApiOperation({ summary: 'Update product recommendations' })
-  @ApiBody({ 
+  @ApiBody({
     type: UpdateRecommendationDto,
     description: 'Product data to update recommendations',
     examples: {
@@ -59,11 +59,11 @@ export class AiController {
         summary: 'Product Update Example',
         value: {
           id: 111,
-          name: "Product Name",
-          description: "Product Description"
-        }
-      }
-    }
+          name: 'Product Name',
+          description: 'Product Description',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
@@ -72,10 +72,11 @@ export class AiController {
   })
   @Post('recommend/update')
   async updateRecomendations(
-    @Body() updateDto: UpdateRecommendationDto
+    @Body() updateDto: UpdateRecommendationDto,
   ): Promise<ResponseData<any>> {
     try {
-      const recommendations = await this.aiService.updateRecomendations(updateDto);
+      const recommendations =
+        await this.aiService.updateRecomendations(updateDto);
       return new ResponseData(
         recommendations,
         HttpStatus.OK,
@@ -123,11 +124,10 @@ export class AiController {
     @Body() batchDto: RecommendationsRefavoritesDto,
   ): Promise<ResponseData<any>> {
     try {
-      const recommendations =
-        await this.aiService.getRecommendationsRefavorites(
-          batchDto.favorite_ids,
-          batchDto.k,
-        );
+      const recommendations = await this.aiService.getRecommendationsFFavorites(
+        batchDto.favorite_ids,
+        batchDto.k,
+      );
       return new ResponseData(
         recommendations,
         HttpStatus.OK,
@@ -308,29 +308,33 @@ export class AiController {
   }
 
   @ApiOperation({ summary: 'Update product' })
-  @ApiBody({ 
+  @ApiBody({
     type: UpdateRecommendationDto,
     description: 'Product data to update',
     examples: {
       example: {
         summary: 'Product Update Example',
         value: {
-          name: "Tên sản phẩm mới",
-          description: "Mô tả mới",
-          category: "Danh mục mới",
-          price: 199.99
-        }
-      }
-    }
+          name: 'Tên sản phẩm mới',
+          description: 'Mô tả mới',
+          category: 'Danh mục mới',
+          price: 199.99,
+        },
+      },
+    },
   })
   @Put('products/:id')
   async updateProduct(
     @Param('id') id: number,
-    @Body() updateDto: UpdateRecommendationDto
+    @Body() updateDto: UpdateRecommendationDto,
   ): Promise<ResponseData<any>> {
     try {
       const result = await this.aiService.updateProduct(id, updateDto);
-      return new ResponseData(result, HttpStatus.OK, 'Product updated successfully');
+      return new ResponseData(
+        result,
+        HttpStatus.OK,
+        'Product updated successfully',
+      );
     } catch (error) {
       return new ResponseData(null, HttpStatus.BAD_REQUEST, error.message);
     }
@@ -339,15 +343,17 @@ export class AiController {
   @ApiOperation({ summary: 'Delete product' })
   @ApiResponse({
     status: 200,
-    description: 'Product deleted successfully'
+    description: 'Product deleted successfully',
   })
   @Delete('products/:id')
-  async deleteProduct(
-    @Param('id') id: number
-  ): Promise<ResponseData<any>> {
+  async deleteProduct(@Param('id') id: number): Promise<ResponseData<any>> {
     try {
       const result = await this.aiService.deleteProduct(id);
-      return new ResponseData(result, HttpStatus.OK, 'Product deleted successfully');
+      return new ResponseData(
+        result,
+        HttpStatus.OK,
+        'Product deleted successfully',
+      );
     } catch (error) {
       return new ResponseData(null, HttpStatus.BAD_REQUEST, error.message);
     }

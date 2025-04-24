@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { ChatQuestionDto } from './dto/chat-question.dto';
 import axios from 'axios';
 import { UpdateRecommendationDto } from './dto/recommendation.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Product } from '../products/entities/product.entity';
+import { Repository } from 'typeorm';
+import { In } from 'typeorm';
 
 interface ChatResponse {
   answer: string;
@@ -29,13 +33,22 @@ interface FileOperationResponse {
 export class AiService {
   private readonly apiUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+  ) {
     this.apiUrl = this.configService.get<string>('AI_API_URL');
   }
 
-  async updateRecomendations(updateDto: UpdateRecommendationDto): Promise<RecommendationResponse> {
+  async updateRecomendations(
+    updateDto: UpdateRecommendationDto,
+  ): Promise<RecommendationResponse> {
     try {
-      const response = await axios.post(`${this.apiUrl}/api/recommend/products`, updateDto);
+      const response = await axios.post(
+        `${this.apiUrl}/api/recommend/products`,
+        updateDto,
+      );
       return response.data;
     } catch (error) {
       throw new Error(
@@ -52,7 +65,34 @@ export class AiService {
       const response = await axios.get(`${this.apiUrl}/api/recommend`, {
         params: { product_id: productId, k },
       });
-      return response.data;
+
+      // Get full product information for each recommendation
+      const recommendations = response.data.recommendations;
+      const productIds = recommendations.map((rec) => rec.id);
+
+      const fullProducts = await this.productRepository.find({
+        where: { id: In(productIds) },
+        relations: [
+          'categories',
+          'information',
+          'keywords',
+          'productWarehouse',
+        ],
+      });
+
+      // Map the full product information to the recommendations
+      const enrichedRecommendations = recommendations.map((rec) => {
+        const fullProduct = fullProducts.find((p) => p.id === rec.id);
+        return {
+          ...rec,
+          ...fullProduct,
+        };
+      });
+
+      return {
+        ...response.data,
+        recommendations: enrichedRecommendations,
+      };
     } catch (error) {
       throw new Error(
         `Failed to get recommendations: ${error.response?.data?.error || error.message}`,
@@ -77,7 +117,7 @@ export class AiService {
     }
   }
 
-  async getRecommendationsRefavorites(
+  async getRecommendationsFFavorites(
     favorite_ids: number[],
     k: number = 20,
   ): Promise<RecommendationResponse> {
@@ -89,7 +129,33 @@ export class AiService {
           k,
         },
       );
-      return response.data;
+
+      const recommendations = response.data.recommendations;
+      const productIds = recommendations.map((rec) => rec.id);
+
+      const fullProducts = await this.productRepository.find({
+        where: { id: In(productIds) },
+        relations: [
+          'categories',
+          'information',
+          'keywords',
+          'productWarehouse',
+        ],
+      });
+
+      // Map the full product information to the recommendations
+      const enrichedRecommendations = recommendations.map((rec) => {
+        const fullProduct = fullProducts.find((p) => p.id === rec.id);
+        return {
+          ...rec,
+          ...fullProduct,
+        };
+      });
+
+      return {
+        ...response.data,
+        recommendations: enrichedRecommendations,
+      };
     } catch (error) {
       throw new Error(
         `Failed to get recommendations: ${error.response?.data?.error || error.message}`,
@@ -181,16 +247,19 @@ export class AiService {
     }
   }
 
-  async updateProduct(productId: number, updateDto: UpdateRecommendationDto): Promise<RecommendationResponse> {
+  async updateProduct(
+    productId: number,
+    updateDto: UpdateRecommendationDto,
+  ): Promise<RecommendationResponse> {
     try {
       const response = await axios.put(
         `${this.apiUrl}/api/recommend/products/${productId}`,
-        updateDto
+        updateDto,
       );
       return response.data;
     } catch (error) {
       throw new Error(
-        `Failed to update product: ${error.response?.data?.error || error.message}`
+        `Failed to update product: ${error.response?.data?.error || error.message}`,
       );
     }
   }
@@ -198,12 +267,12 @@ export class AiService {
   async deleteProduct(productId: number): Promise<RecommendationResponse> {
     try {
       const response = await axios.delete(
-        `${this.apiUrl}/api/recommend/products/${productId}`
+        `${this.apiUrl}/api/recommend/products/${productId}`,
       );
       return response.data;
     } catch (error) {
       throw new Error(
-        `Failed to delete product: ${error.response?.data?.error || error.message}`
+        `Failed to delete product: ${error.response?.data?.error || error.message}`,
       );
     }
   }

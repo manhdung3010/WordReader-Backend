@@ -161,4 +161,18 @@ export class CategoryProductPublicController {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
+
+  @Get('findByUrl/:url')
+  async findOneByUrl(@Param('url') url: string): Promise<ResponseData<Categories>> {
+    try {
+      const category: Categories = await this.categoriesService.findOneByUrl(url);
+      return new ResponseData<Categories>(
+        category,
+        HttpStatus.CREATED,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 }
