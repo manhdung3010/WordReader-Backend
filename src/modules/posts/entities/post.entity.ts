@@ -18,7 +18,7 @@ export class Posts {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ type: 'longtext' }) 
   content: string;
 
   @Column()
@@ -39,7 +39,7 @@ export class Posts {
   @Column()
   author: string;
 
-  @Column()
+  @Column({ nullable: true })
   authorImage: string;
 
   @Column({ type: 'int', default: 0 })

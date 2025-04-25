@@ -26,7 +26,7 @@ export class CategoryPost {
   @Column()
   homeDisplay: boolean;
 
-  @Column()
+  @Column({ nullable: true })
   image: string;
 
   @Column('json', { nullable: true })

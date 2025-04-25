@@ -33,9 +33,7 @@ export class PostsService {
       where: { id: user.userId },
     });
 
-    const existingPost = await this.findOneByUrl(
-      createPostDto.url,
-    );
+    const existingPost = await this.checkExistByUrl(createPostDto.url);
     if (existingPost) {
       throw new Error('Url post already exists');
     }
@@ -146,7 +144,7 @@ export class PostsService {
       relations: ['categories', 'keywords'],
     });
     if (!post) {
-      throw new Error(`Product with ID ${id} not found`);
+      throw new Error(`Post with ID ${id} not found`);
     }
     return post;
   }
@@ -157,9 +155,14 @@ export class PostsService {
       relations: ['categories', 'keywords'],
     });
     if (!post) {
-      throw new Error(`Product with url ${url} not found`);
+      throw new Error(`Post with url ${url} not found`);
     }
     return post;
+  }
+
+  async checkExistByUrl(url: string): Promise<boolean> {
+    const post = await this.postRepository.findOne({ where: { url } });
+    return !!post;
   }
 
   async increaseViewCount(postId: number) {
