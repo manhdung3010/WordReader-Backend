@@ -21,17 +21,18 @@ export class ReviewsProductService {
     createReviewsProductDto: CreateReviewsProductDto,
     user: any,
   ): Promise<ReviewsProduct> {
-    const newReviewsProduct = this.reviewsProductRepository.create(
-      createReviewsProductDto,
-    );
-    const { productId, ...rest } = createReviewsProductDto;
-    newReviewsProduct.product = { id: productId } as any;
-
-    newReviewsProduct.author = user.fullName;
-    newReviewsProduct.authorImage = user.avatar;
-
+    const { productId, ...reviewData } = createReviewsProductDto;
+  
+    const newReviewsProduct = this.reviewsProductRepository.create({
+      ...reviewData,
+      product: { id: productId } as Product,
+      author: user?.fullName || 'Anonymous',
+      authorImage: user?.avatar || '',
+    });
+  
     return await this.reviewsProductRepository.save(newReviewsProduct);
   }
+  
 
   async findAll(): Promise<ReviewsProduct[]> {
     return await this.reviewsProductRepository.find({ relations: ['product'] });

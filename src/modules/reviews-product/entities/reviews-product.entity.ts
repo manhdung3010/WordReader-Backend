@@ -27,7 +27,7 @@ export class ReviewsProduct {
   @Column({ type: 'text' })
   content: string;
 
-  @Column()
+  @Column({ default: true })
   display: boolean;
 
   @Column({ type: 'json', nullable: true })

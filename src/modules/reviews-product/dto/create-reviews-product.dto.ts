@@ -27,11 +27,6 @@ export class CreateReviewsProductDto {
   content: string;
 
   @ApiProperty({
-    example: true,
-  })
-  display: boolean;
-
-  @ApiProperty({
     example: [],
     isArray: true,
   })
