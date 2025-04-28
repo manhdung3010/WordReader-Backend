@@ -526,95 +526,112 @@ export class ProductsService {
     id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    const {
-      categories: categoryIds,
-      keywords: keywordIds,
-      productWarehouse,
-      information,
-      ...updateData
-    } = updateProductDto;
+    try {
+      const {
+        categories: categoryIds,
+        keywords: keywordIds,
+        productWarehouse,
+        information,
+        ...updateData
+      } = updateProductDto;
 
-    const product = await this.findOne(id);
-    if (!product) {
-      throw new Error(`Product with ID ${id} not found`);
-    }
-
-    // Check if URL is being updated and if it already exists
-    if (updateData.url && updateData.url !== product.url) {
-      const existingProductByUrl = await this.productRepository.findOne({
-        where: { url: updateData.url },
-      });
-      if (existingProductByUrl && existingProductByUrl.id !== id) {
-        throw new Error(`Product with URL ${updateData.url} already exists`);
+      const product = await this.findOne(id);
+      if (!product) {
+        throw new Error(`Product with ID ${id} not found`);
       }
-    }
 
-    // If categoryIds are provided, fetch corresponding categories and associate them
-    if (categoryIds && categoryIds.length > 0) {
-      const categories = await this.categoriesRepository.findByIds(categoryIds);
-      product.categories = categories;
-    }
+      // Check if URL is being updated and if it already exists
+      if (updateData.url && updateData.url !== product.url) {
+        const existingProductByUrl = await this.productRepository.findOne({
+          where: { url: updateData.url },
+        });
+        if (existingProductByUrl && existingProductByUrl.id !== id) {
+          throw new Error(`Product with URL ${updateData.url} already exists`);
+        }
+      }
 
-    // If keywordIds are provided, fetch corresponding keywords and associate them
-    if (keywordIds && keywordIds.length > 0) {
-      const keywords = await this.keywordRepository.findByIds(keywordIds);
-      product.keywords = keywords;
-    }
+      // If categoryIds are provided, fetch corresponding categories and associate them
+      if (categoryIds && categoryIds.length > 0) {
+        const categories = await this.categoriesRepository.findBy({
+          id: In(categoryIds),
+        });
+        product.categories = categories;
+      }
 
-    // Update product fields
-    Object.assign(product, updateData);
+      // If keywordIds are provided, fetch corresponding keywords and associate them
+      if (keywordIds && keywordIds.length > 0) {
+        const keywords = await this.keywordRepository.findBy({
+          id: In(keywordIds),
+        });
+        product.keywords = keywords;
+      }
 
-    await this.productRepository.save(product);
+      // Update product fields
+      Object.assign(product, updateData);
 
-    // Update productWarehouse
-    if (productWarehouse) {
-      const existingWarehouse = await this.productWarehouseRepository.findOne({
-        where: { product: { id: product.id } },
-      });
+      await this.productRepository.save(product);
 
-      if (existingWarehouse) {
-        const { quantityInStock, quantityInUse } = productWarehouse;
-        existingWarehouse.quantityInStock = quantityInStock;
-        existingWarehouse.quantityInUse = quantityInUse;
-        existingWarehouse.displayQuantity = quantityInStock - quantityInUse;
-        await this.productWarehouseRepository.save(existingWarehouse);
-      } else {
-        const { quantityInStock, quantityInUse } = productWarehouse;
-        const displayQuantity = quantityInStock - quantityInUse;
+      // Update productWarehouse
+      if (productWarehouse) {
+        const existingWarehouse = await this.productWarehouseRepository.findOne(
+          {
+            where: { product: { id: product.id } },
+          },
+        );
 
-        const newProductWarehouse = this.productWarehouseRepository.create({
-          product,
-          quantityInStock,
-          quantityInUse,
-          displayQuantity,
+        if (existingWarehouse) {
+          const { quantityInStock, quantityInUse } = productWarehouse;
+          existingWarehouse.quantityInStock = quantityInStock;
+          existingWarehouse.quantityInUse = quantityInUse;
+          existingWarehouse.displayQuantity = quantityInStock - quantityInUse;
+          await this.productWarehouseRepository.save(existingWarehouse);
+        } else {
+          const { quantityInStock, quantityInUse } = productWarehouse;
+          const displayQuantity = quantityInStock - quantityInUse;
+
+          const newProductWarehouse = this.productWarehouseRepository.create({
+            product,
+            quantityInStock,
+            quantityInUse,
+            displayQuantity,
+          });
+
+          await this.productWarehouseRepository.save(newProductWarehouse);
+        }
+      }
+
+      // Update information
+      if (information && information.length > 0) {
+        await this.infoProductRepository.delete({
+          product: { id: product.id },
         });
 
-        await this.productWarehouseRepository.save(newProductWarehouse);
+        for (const infoProductDto of information) {
+          const { name: infoName, content } = infoProductDto;
+          const infoProduct = this.infoProductRepository.create({
+            name: infoName,
+            content,
+            product,
+          });
+          await this.infoProductRepository.save(infoProduct);
+        }
       }
-    }
 
-    // Update information
-    if (information && information.length > 0) {
-      await this.infoProductRepository.delete({ product: { id: product.id } });
-
-      for (const infoProductDto of information) {
-        const { name: infoName, content } = infoProductDto;
-        const infoProduct = this.infoProductRepository.create({
-          name: infoName,
-          content,
-          product,
+      try {
+        await this.aiService.updateProduct(id, {
+          id: product.id,
+          name: product.name,
+          description: product.description,
         });
-        await this.infoProductRepository.save(infoProduct);
+      } catch (aiError) {
+        console.error('Failed to update AI recommendations:', aiError.message);
+        // Continue with the update even if AI service fails
       }
+
+      return this.findOne(id);
+    } catch (error) {
+      throw new Error(`Failed to update product: ${error.message}`);
     }
-
-    await this.aiService.updateProduct(id, {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-    });
-
-    return this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
