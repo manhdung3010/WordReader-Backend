@@ -14,7 +14,16 @@ export class FilesService {
   }
 
   async saveMultipleFiles(files: Array<Express.Multer.File>): Promise<any> {
-    const allowedExtensions = ['.png', '.jpg', '.webp'];
+    const allowedExtensions = [
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.webp',
+      '.gif',
+      '.bmp',
+      '.tiff',
+      '.svg',
+    ];
     const uploadedFiles: UploadedFileDto[] = [];
 
     for (const file of files) {
