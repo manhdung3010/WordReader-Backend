@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { StatusProduct } from 'src/common/enums/product-status.enum';
 
 export class CreateProductDto {
@@ -20,7 +20,12 @@ export class CreateProductDto {
   description?: string;
 
   @ApiProperty({
-    example: 'string',
+    example: 'product-url-slug',
+  })
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    message:
+      'URL must be a valid slug format (lowercase letters, numbers, and hyphens only)',
   })
   url: string;
 

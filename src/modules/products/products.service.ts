@@ -539,6 +539,16 @@ export class ProductsService {
       throw new Error(`Product with ID ${id} not found`);
     }
 
+    // Check if URL is being updated and if it already exists
+    if (updateData.url && updateData.url !== product.url) {
+      const existingProductByUrl = await this.productRepository.findOne({
+        where: { url: updateData.url },
+      });
+      if (existingProductByUrl && existingProductByUrl.id !== id) {
+        throw new Error(`Product with URL ${updateData.url} already exists`);
+      }
+    }
+
     // If categoryIds are provided, fetch corresponding categories and associate them
     if (categoryIds && categoryIds.length > 0) {
       const categories = await this.categoriesRepository.findByIds(categoryIds);
