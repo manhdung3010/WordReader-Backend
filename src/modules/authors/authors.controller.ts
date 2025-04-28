@@ -93,7 +93,6 @@ export class AuthorsController {
     }
   }
 
-  @AuthAdmin()
   @Put(':id')
   async update(
     @Param('id') id: string,
@@ -122,5 +121,56 @@ export class AuthorsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.authorsService.remove(+id);
+  }
+}
+
+@ApiTags('Public - Author')
+@Controller('/api/public/authors')
+export class AuthorsPublicController {
+  constructor(private readonly authorsService: AuthorsService) {}
+
+  @Get()
+  async findAll(
+    @Query() filter: FilterAuthorDto,
+  ): Promise<ResponseData<Author[]>> {
+    try {
+      const [authors, totalElements] =
+        await this.authorsService.findAll(filter);
+      const totalPages = Math.ceil(totalElements / (filter.pageSize || 20));
+      const size = authors.length;
+
+      return new ResponseData<Author[]>(
+        authors,
+        HttpStatus.OK,
+        'Successfully retrieved author.',
+        totalElements,
+        totalPages,
+        size,
+      );
+    } catch (error) {
+      return new ResponseData<Author[]>(
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve author.',
+      );
+    }
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<ResponseData<Author>> {
+    try {
+      const author = await this.authorsService.findOne(+id);
+      return new ResponseData<Author>(
+        author,
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData<Author>(
+        null,
+        HttpStatus.NOT_FOUND,
+        'Author not found.',
+      );
+    }
   }
 }
