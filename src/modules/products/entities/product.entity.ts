@@ -87,7 +87,6 @@ export class Product {
     flashSaleStartTime: Date;
     flashSaleEndTime: Date;
     flashSaleDiscount: number;
-    flashSalePrice: number;
   };
 
   @ManyToMany(() => Keyword)

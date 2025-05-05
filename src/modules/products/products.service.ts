@@ -87,12 +87,6 @@ export class ProductsService {
       discountPrice = (price * perDiscount) / 100;
     }
 
-    let flashSalePrice = price;
-
-    if (flashSale && flashSale.flashSaleDiscount > 0) {
-      flashSalePrice = price - (price * flashSale.flashSaleDiscount) / 100;
-    }
-
     const newProduct = this.productRepository.create({
       name,
       code,
@@ -109,7 +103,6 @@ export class ProductsService {
       flashSale: flashSale
         ? {
             ...flashSale,
-            flashSalePrice,
           }
         : undefined,
       seo,
@@ -177,23 +170,9 @@ export class ProductsService {
         throw new Error(`Product with ID ${id} not found`);
       }
 
-      let flashSalePrice = 0;
-
-      if (
-        createProductFlashSaleDto.flashSale &&
-        createProductFlashSaleDto.flashSale.flashSaleDiscount > 0
-      ) {
-        flashSalePrice =
-          product.price -
-          (product.price *
-            createProductFlashSaleDto.flashSale.flashSaleDiscount) /
-            100;
-      }
-
       const updateObject = {
         flashSale: {
           ...createProductFlashSaleDto.flashSale,
-          flashSalePrice,
         },
       };
 
@@ -385,17 +364,24 @@ export class ProductsService {
   }
 
   async findAllFlashSale(): Promise<Product[]> {
-    const currentTime = new Date();
+    const currentTimeUTC = new Date().toISOString(); // đảm bảo UTC ISO format
+
     const products = await this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.categories', 'categories')
       .leftJoinAndSelect('product.information', 'information')
-      .where('product.flashSale->>"$.flashSaleStartTime" <= :currentTime', {
-        currentTime,
-      })
-      .andWhere('product.flashSale->>"$.flashSaleEndTime" >= :currentTime', {
-        currentTime,
-      })
+      .where(
+        `CAST(JSON_UNQUOTE(JSON_EXTRACT(product.flashSale, '$.flashSaleStartTime')) AS DATETIME) <= :currentTime`,
+        {
+          currentTime: currentTimeUTC,
+        },
+      )
+      .andWhere(
+        `CAST(JSON_UNQUOTE(JSON_EXTRACT(product.flashSale, '$.flashSaleEndTime')) AS DATETIME) >= :currentTime`,
+        {
+          currentTime: currentTimeUTC,
+        },
+      )
       .getMany();
 
     return products;

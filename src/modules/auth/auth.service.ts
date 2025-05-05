@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -7,7 +8,8 @@ import { Users } from '../users/entities/users.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ChangePasswordDto } from './dto/change-password';
+import { GoogleLoginDto } from './dto/login-google';
 
 @Injectable()
 export class AuthService {
@@ -45,45 +47,91 @@ export class AuthService {
     return { accessToken, user };
   }
 
-  async googleLogin(profile: any): Promise<{ accessToken: string; user: any }> {
-    if (!profile) {
-      throw new HttpException('No user from Google', HttpStatus.BAD_REQUEST);
-    }
-
-    let user = await this.usersService.findOneByGoogleId(profile.googleId);
-
-    if (!user) {
-      user = await this.usersService.findOneByEmail(profile.email);
-
-      if (user) {
-        user.googleId = profile.googleId;
-        await this.userRepository.save(user);
-      } else {
-        user = new Users();
-        user.email = profile.email;
-        user.fullName = profile.displayName;
-        user.avatar = profile.photo;
-        user.googleId = profile.googleId;
-
-        const baseUsername = profile.username || profile.email.split('@')[0];
-        user.username = await this.generateUniqueUsername(baseUsername);
-
-        user = await this.userRepository.save(user);
+  async googleLogin(
+    googleProfile: GoogleLoginDto,
+  ): Promise<{ accessToken: string; user: any }> {
+    try {
+      if (!googleProfile || !googleProfile.email) {
+        throw new HttpException(
+          'Invalid Google profile data',
+          HttpStatus.BAD_REQUEST,
+        );
       }
+
+      // Check if user exists by Google ID
+      let user = await this.usersService.findOneByGoogleId(
+        googleProfile.googleId,
+      );
+
+      if (!user) {
+        // If no user with this Google ID, check by email
+        user = await this.usersService.findOneByEmail(googleProfile.email);
+
+        if (user) {
+          // If user with this email exists, update their Google ID
+          user.googleId = googleProfile.googleId;
+          if (!user.avatar && googleProfile.photo) {
+            user.avatar = googleProfile.photo;
+          }
+          await this.userRepository.save(user);
+        } else {
+          // Create new user from Google profile
+          user = new Users();
+          user.email = googleProfile.email;
+          user.fullName = googleProfile.displayName;
+          user.avatar = googleProfile.photo;
+          user.googleId = googleProfile.googleId;
+
+          // Create a unique username if the provided one already exists
+          const baseUsername =
+            googleProfile.username || googleProfile.email.split('@')[0];
+          user.username = await this.generateUniqueUsername(baseUsername);
+
+          // Save the new user
+          user = await this.userRepository.save(user);
+        }
+      } else {
+        // Update existing user's profile info if needed
+        let needsUpdate = false;
+
+        if (!user.avatar && googleProfile.photo) {
+          user.avatar = googleProfile.photo;
+          needsUpdate = true;
+        }
+
+        if (!user.fullName && googleProfile.displayName) {
+          user.fullName = googleProfile.displayName;
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          await this.userRepository.save(user);
+        }
+      }
+
+      // Generate JWT token
+      const payload = {
+        sub: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+      };
+
+      const accessToken = await this.jwtService.signAsync(payload, {
+        expiresIn: '7d',
+      });
+
+      // Remove sensitive data before returning user object
+      const { password, ...userWithoutPassword } = user;
+
+      return { accessToken, user: userWithoutPassword };
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw new HttpException(
+        error.message || 'Google authentication failed',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-
-    const payload = {
-      sub: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      role: user.role,
-    };
-
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '7d',
-    });
-
-    return { accessToken, user };
   }
 
   private async generateUniqueUsername(baseUsername: string): Promise<string> {
@@ -128,8 +176,8 @@ export class AuthService {
     return await this.userRepository.save(newUser);
   }
 
-  async forgotPassword(
-    forgotPasswordDto: ForgotPasswordDto,
+  async changePassword(
+    changePassword: ChangePasswordDto,
     user: any,
   ): Promise<Users> {
     const existingUser = (await this.usersService.findOneDetail(
@@ -141,14 +189,14 @@ export class AuthService {
     }
 
     const isPasswordValid = await bcrypt.compare(
-      forgotPasswordDto.oldPassword,
+      changePassword.oldPassword,
       existingUser.password,
     );
     if (!isPasswordValid) {
       throw new Error('Old password is incorrect');
     }
 
-    const hashedPassword = await bcrypt.hash(forgotPasswordDto.newPassword, 12);
+    const hashedPassword = await bcrypt.hash(changePassword.newPassword, 12);
     existingUser.password = hashedPassword;
     await this.usersService.update(existingUser.id, existingUser);
 

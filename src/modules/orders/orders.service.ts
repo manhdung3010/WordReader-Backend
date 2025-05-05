@@ -42,10 +42,7 @@ export class OrdersService {
 
   async create(createOrderDto: CreateOrderDto, user: any): Promise<Order> {
     const userOrder = await this.usersRepository.findOneBy({ id: user.userId });
-
-    if (!userOrder) {
-      throw new Error(`User with ID ${user.userId} not found`);
-    }
+    if (!userOrder) throw new Error(`User with ID ${user.userId} not found`);
 
     const productIds =
       createOrderDto.orderItems?.map((product) => product.productId) || [];
@@ -64,25 +61,45 @@ export class OrdersService {
       }
     }
 
-    const totalPrice = productData.reduce((sum, product) => {
-      const productDto = createOrderDto.orderItems.find(
-        (dto) => dto.productId === product.id,
-      );
-      return (
-        sum +
-        (product.price - product.discountPrice) * (productDto?.quantity || 0)
-      );
-    }, 0);
+    const nowUTC = new Date(new Date().toISOString());
+    let totalPrice = 0;
 
     const orderItemsWithDetails = createOrderDto.orderItems.map((itemDto) => {
       const product = productData.find((p) => p.id === itemDto.productId);
       if (!product) {
         throw new Error(`Product with ID ${itemDto.productId} not found`);
       }
-      return { ...itemDto, product };
+
+      const { flashSale, price, perDiscount } = product;
+      let finalPrice = price;
+
+      if (flashSale) {
+        const start = new Date(flashSale.flashSaleStartTime);
+        const end = new Date(flashSale.flashSaleEndTime);
+        const inFlashSale = nowUTC >= start && nowUTC <= end;
+
+        if (inFlashSale) {
+          finalPrice = price * (1 - flashSale.flashSaleDiscount / 100);
+        } else if (perDiscount > 0) {
+          finalPrice = price * (1 - perDiscount / 100);
+        }
+      } else if (perDiscount > 0) {
+        finalPrice = price * (1 - perDiscount / 100);
+      }
+
+      const itemTotal = finalPrice * itemDto.quantity;
+      totalPrice += itemTotal;
+
+      return {
+        ...itemDto,
+        product,
+        unitPrice: finalPrice,
+        itemTotal,
+      };
     });
 
     let discountAmount = 0;
+
     if (createOrderDto.discountCode) {
       const checkDiscountDto = {
         code: createOrderDto.discountCode,
@@ -94,7 +111,6 @@ export class OrdersService {
           await this.discountsService.checkDiscount(checkDiscountDto);
         discountAmount = discountResult.priceReduce;
 
-        // Update usage limit if applicable
         discountResult.discount.usageLimit -= 1;
         await this.discountRepository.save(discountResult.discount);
       } catch (error) {
@@ -106,7 +122,7 @@ export class OrdersService {
       ...createOrderDto,
       user: userOrder,
       discountPrice: discountAmount,
-      totalPrice: totalPrice,
+      totalPrice,
       status: OrderStatus.PENDING,
       payStatus: OrderPayStatus.PENDING,
       orderItems: orderItemsWithDetails,
@@ -133,11 +149,7 @@ export class OrdersService {
     }
 
     newOrder = await this.orderRepository.save(newOrder);
-
-    // Cập nhật orderCode theo ID
     newOrder.orderCode = `ORD-${newOrder.id}`;
-
-    // Lưu lại với orderCode
     return this.orderRepository.save(newOrder);
   }
 

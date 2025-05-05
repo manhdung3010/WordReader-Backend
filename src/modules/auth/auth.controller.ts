@@ -14,11 +14,12 @@ import { AuthService } from './auth.service';
 import { AuthPayloadDto } from './dto/auth.dto';
 import { ResponseData } from 'src/common/global/globalClass';
 import { HttpMessage } from 'src/common/global/globalEnum';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RegisterDto } from './dto/register.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { AuthUser } from 'src/common/decorators/http.decorators';
 import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDto } from './dto/change-password';
+import { GoogleLoginDto } from './dto/login-google';
 
 @ApiTags('Authenticate')
 @Controller('api/auth')
@@ -58,15 +59,15 @@ export class AuthController {
   }
 
   @AuthUser()
-  @Post('forgot-password')
-  async forgotPassword(
-    @Body() forgotPasswordDto: ForgotPasswordDto,
+  @Post('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
     @Req() req: any,
   ) {
     try {
       const user = req.user;
-      const newUser = await this.authService.forgotPassword(
-        forgotPasswordDto,
+      const newUser = await this.authService.changePassword(
+        changePasswordDto,
         user,
       );
       return new ResponseData<any>(
@@ -76,6 +77,30 @@ export class AuthController {
       );
     } catch (error) {
       return new ResponseData<any>(null, HttpStatus.BAD_REQUEST, error.message);
+    }
+  }
+
+  @Post('google/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with Google' })
+  @ApiResponse({ status: 200, description: 'Successfully logged in with Google' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async googleLoginWithToken(@Body() googleLoginDto: GoogleLoginDto) {
+    try {
+      // Call the service method to handle Google login
+      const { accessToken, user } = await this.authService.googleLogin(googleLoginDto);
+      
+      return new ResponseData<any>(
+        { accessToken, ...user },
+        HttpStatus.OK,
+        HttpMessage.SUCCESS,
+      );
+    } catch (error) {
+      return new ResponseData<any>(
+        null, 
+        HttpStatus.BAD_REQUEST, 
+        error.message || 'Google authentication failed'
+      );
     }
   }
 

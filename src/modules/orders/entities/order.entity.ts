@@ -37,7 +37,7 @@ export class Order {
   @Column({ type: 'enum', enum: OrderPayStatus })
   payStatus: OrderPayStatus;
 
-  @Column({ type: 'decimal' })
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalPrice: number;
 
   @Column({ type: 'decimal', nullable: true })
