@@ -1,7 +1,7 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	]
+  "folders": [
+    {
+      "path": "../WorldReader-Fontend/WorldReader-Admin",
+    },
+  ],
 }
