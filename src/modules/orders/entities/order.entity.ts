@@ -14,7 +14,10 @@ import { Product } from 'src/modules/products/entities/product.entity';
 
 interface OrderItem {
   quantity: number;
+  productId: number;
   product: Product;
+  unitPrice: number;
+  itemTotal: number;
 }
 
 @Entity()
