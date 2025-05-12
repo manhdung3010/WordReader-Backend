@@ -245,6 +245,7 @@ export class OrdersService {
     const options: FindManyOptions<Order> = {
       relations: ['user'],
       skip: skip,
+      order: { createdAt: 'DESC' },
       take: pageSize,
       where: whereClause,
     };
