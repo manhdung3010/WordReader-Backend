@@ -31,6 +31,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { Order } from './modules/orders/entities/order.entity';
 import { UserViewHistory } from './modules/users/entities/user-view-history';
 import { AiModule } from './modules/ai/ai.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -45,7 +46,7 @@ import { AiModule } from './modules/ai/ai.module';
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_DBNAME,
-      connectTimeout: 60000, 
+      connectTimeout: 60000,
       entities: [
         Users,
         Categories,
@@ -80,6 +81,7 @@ import { AiModule } from './modules/ai/ai.module';
     DiscountsModule,
     OrdersModule,
     AiModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}
