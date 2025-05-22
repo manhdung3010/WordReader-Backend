@@ -34,7 +34,7 @@ export class ReportsService {
     const orders = await this.orderRepository.find({
       where: {
         createdAt: Between(startDate, endDate),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -87,7 +87,7 @@ export class ReportsService {
     const orders = await this.orderRepository.find({
       where: {
         createdAt: Between(startDate, endDate),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -198,7 +198,7 @@ export class ReportsService {
     const recentOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(thirtyDaysAgo, new Date()),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -239,6 +239,9 @@ export class ReportsService {
         value: item.displayQuantity * item.product.price,
       };
     });
+
+    // Sort inventory items by currentQuantity in descending order
+    inventoryItems.sort((a, b) => b.currentQuantity - a.currentQuantity);
 
     // Filter by status if provided
     const filteredItems = status
@@ -299,7 +302,7 @@ export class ReportsService {
     const recentOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(sevenDaysAgo, new Date()),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -446,7 +449,7 @@ export class ReportsService {
     const orders = await this.orderRepository.find({
       where: {
         createdAt: Between(startDate, endDate),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -515,7 +518,7 @@ export class ReportsService {
     const orders = await this.orderRepository.find({
       where: {
         createdAt: Between(startDate, endDate),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -570,7 +573,7 @@ export class ReportsService {
     const currentMonthOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(startOfCurrentMonth, now),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -578,7 +581,7 @@ export class ReportsService {
     const previousMonthOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(startOfPreviousMonth, endOfPreviousMonth),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -623,7 +626,7 @@ export class ReportsService {
     // Get total transactions
     const totalTransactions = await this.orderRepository.count({
       where: {
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -669,7 +672,7 @@ export class ReportsService {
     const currentWeekOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(startOfCurrentWeek, now),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -677,7 +680,7 @@ export class ReportsService {
     const previousWeekOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(startOfPreviousWeek, startOfCurrentWeek),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -685,7 +688,7 @@ export class ReportsService {
     const currentYearOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(startOfCurrentYear, now),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -693,7 +696,7 @@ export class ReportsService {
     const previousYearOrders = await this.orderRepository.find({
       where: {
         createdAt: Between(startOfPreviousYear, startOfCurrentYear),
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 
@@ -728,7 +731,7 @@ export class ReportsService {
     // Get total sessions (unique orders)
     const totalSessions = await this.orderRepository.count({
       where: {
-        status: In([OrderStatus.DONE, OrderStatus.PENDING]),
+        status: OrderStatus.DONE,
       },
     });
 

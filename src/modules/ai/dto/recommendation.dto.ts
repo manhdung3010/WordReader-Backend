@@ -48,8 +48,8 @@ export class UpdateRecommendationDto {
     example: 111,
   })
   @IsNumber()
-  @IsOptional()
   @IsNotEmpty()
+  @IsOptional()
   id: number;
 
   @ApiProperty({
@@ -67,4 +67,37 @@ export class UpdateRecommendationDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @ApiProperty({
+    description: 'Product price',
+    example: 26,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  price: number;
+
+  @ApiProperty({
+    description: 'Product categories',
+    example: 'Mindfulness & Psychology\t',
+  })
+  @IsString()
+  @IsNotEmpty()
+  categories: string;
+
+  @ApiProperty({
+    description: 'Product keywords',
+    example: 'Information Technology',
+  })
+  @IsString()
+  @IsNotEmpty()
+  keywords: string;
+
+  @ApiProperty({
+    description: 'Product information',
+    example:
+      'Format:384 pages, Paperback,ISBN:9780553383713,Published:1995 by Bantam Books',
+  })
+  @IsString()
+  @IsNotEmpty()
+  information: string;
 }

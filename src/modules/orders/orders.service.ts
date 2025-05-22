@@ -162,6 +162,7 @@ export class OrdersService {
       relations: ['user'],
       skip: skip,
       take: pageSize,
+      order: { createdAt: 'DESC' },
       where: this.buildWhereClause(filter),
     };
 

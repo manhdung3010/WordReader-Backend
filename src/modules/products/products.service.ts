@@ -155,6 +155,19 @@ export class ProductsService {
       id: newProduct.id,
       name: newProduct.name,
       description: newProduct.description,
+      price: newProduct.price,
+      categories: newProduct.categories
+        ? newProduct.categories.map((category) => category.name).join('\t')
+        : '',
+      keywords: newProduct.keywords
+        ? newProduct.keywords.map((keyword) => keyword.name).join(', ')
+        : '',
+      information:
+        information && information.length > 0
+          ? information
+              .map((info) => `${info.name}: ${info.content.trim()}`)
+              .join(', ')
+          : '',
     });
 
     return newProduct;
@@ -604,11 +617,22 @@ export class ProductsService {
       }
 
       try {
-        await this.aiService.updateProduct(id, {
-          id: product.id,
-          name: product.name,
-          description: product.description,
-        });
+       await this.aiService.updateProduct(id, {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        categories: product.categories
+            ? product.categories.map((category) => category.name).join("\t")
+            : "",
+        keywords: product.keywords
+            ? product.keywords.map((keyword) => keyword.name).join(", ")
+            : "",
+        information:
+            product.information && product.information.length > 0
+                ? product.information.map((info) => `${info.name}: ${info.content.trim()}`).join(", ")
+                : "",
+    });
       } catch (aiError) {
         console.error('Failed to update AI recommendations:', aiError.message);
         // Continue with the update even if AI service fails
