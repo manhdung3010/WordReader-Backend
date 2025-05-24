@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from '../products/entities/product.entity';
 import { Repository } from 'typeorm';
 import { In } from 'typeorm';
+import { Order } from '../orders/entities/order.entity';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 
 interface ChatResponse {
   answer: string;
@@ -37,6 +39,8 @@ export class AiService {
     private configService: ConfigService,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
   ) {
     this.apiUrl = this.configService.get<string>('AI_API_URL');
   }
@@ -120,12 +124,39 @@ export class AiService {
   async getRecommendationsFFavorites(
     favorite_ids: number[],
     k: number = 20,
+    user?: any,
   ): Promise<RecommendationResponse> {
     try {
+      let purchasedProductIds: number[] = [];
+
+      // If user is logged in, get their purchased products
+      if (user?.userId) {
+        const orders = await this.orderRepository.find({
+          where: {
+            user: { id: user.userId },
+            status: OrderStatus.DONE,
+          },
+        });
+
+        // Extract unique product IDs from completed orders
+        purchasedProductIds = [
+          ...new Set(
+            orders.flatMap((order) =>
+              order.orderItems.map((item) => item.productId),
+            ),
+          ),
+        ];
+      }
+
+      // Combine favorite_ids with purchased product IDs
+      const combinedIds = [
+        ...new Set([...favorite_ids, ...purchasedProductIds]),
+      ];
+
       const response = await axios.post(
         `${this.apiUrl}/api/recommend/favorites`,
         {
-          favorite_ids: favorite_ids,
+          favorite_ids: combinedIds,
           k,
         },
       );

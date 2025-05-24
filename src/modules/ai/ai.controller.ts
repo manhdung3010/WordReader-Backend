@@ -10,6 +10,8 @@ import {
   UseInterceptors,
   UploadedFile,
   HttpStatus,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -28,6 +30,7 @@ import {
   UpdateRecommendationDto,
 } from './dto/recommendation.dto';
 import { ResponseData } from 'src/common/global/globalClass';
+import { OptionalAuthGuard } from 'src/common/guards/optional-auth.guard';
 
 @ApiTags('AI Services')
 @Controller('api/ai')
@@ -112,21 +115,24 @@ export class AiController {
     }
   }
 
-  @ApiOperation({ summary: 'Get batch recommendations' })
+  @UseGuards(OptionalAuthGuard)
+  @ApiOperation({ summary: 'Get recommendations based on favorites' })
   @ApiBody({ type: RecommendationsRefavoritesDto })
   @ApiResponse({
     status: 200,
-    description: 'Returns batch recommendations',
+    description: 'Returns recommendations based on favorites',
     type: ResponseData,
   })
   @Post('recommend/favorites')
   async getRecommendationsRefavorites(
+    @Request() req: any,
     @Body() batchDto: RecommendationsRefavoritesDto,
   ): Promise<ResponseData<any>> {
     try {
       const recommendations = await this.aiService.getRecommendationsFFavorites(
         batchDto.favorite_ids,
         batchDto.k,
+        req.user,
       );
       return new ResponseData(
         recommendations,
